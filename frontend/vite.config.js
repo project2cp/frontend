@@ -7,6 +7,9 @@ export default defineConfig({
   plugins: [react(),
     tailwindcss()
   ],
-  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.webp']
+  assetsInclude: ['**/*.png', '**/*.jpg', '**/*.webp'],
+  server : {
+    port: 3001
+  }
 
 })
