@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+/* src/index.css */
+:root {
+    --bg-purple: #1D022C; 
+    --bg-btn :#6b28b2;
+    --primary-purple: #B39DDB;
+    --verse-white: #FFFFFF;
+}
+body{
+    font-family: "Roboto", serif;
+}
+li a.underline-effect {
+    @apply relative hover:after:w-full after:absolute 
+    after:left-0 after:bottom-[-2px] after:h-[2px] 
+    after:bg-white after:w-0 after:transition-all after:duration-300 pb-1;
+}
+.btn-effect{
+    @apply border-1 p-1.5 rounded-md hover:text-[var(--primary-purple)]
+}
+.diamond {
+    clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+}
+/* Hide scrollbar */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+/* Add to your global CSS */
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+/* For black background with opacity 52%  */
+.bg-black-52 {
+  background-color: rgba(0, 0, 0, 0.52);
+}
+
+
+/* For logo in the footer */
+
+@keyframes spin-3d {
+  from {
+    transform: rotateY(0deg);
+  }
+  to {
+    transform: rotateY(360deg);
+  }
+}
+
+.animate-spin-3d {
+  animation: spin-3d 6s linear infinite;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.group:hover .group-hover\:rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+.group:hover .group-hover\:[transform-style\:preserve-3d] {
+  transform-style: preserve-3d;
+}
+
+.footer-bg {
+  background-image: url("./assets/footer_bg.png"); /*  Correct path */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;  /* Prevent repeat */
+}
+.login,.signup {
+  background-image: url("./assets/sign-bg.png");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;  /* Prevent repeat */
+}
+.bg-purple-70 {
+  background-color: rgba(29, 2, 44, 0.52);
+}
