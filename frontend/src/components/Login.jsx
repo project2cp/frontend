@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import validator from "validator";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 import videoBg from "../assets/bg-vd1.mp4";
+import { useNavigate } from "react-router-dom";
 
 export const Login = () => {
     const [email, setEmail] = useState("");
@@ -9,7 +10,7 @@ export const Login = () => {
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [isFormValid, setIsFormValid] = useState(false);
-
+    const navigate = useNavigate();
     // Validation logic (same as previous)
     const validatePassword = (password) => password.length >= 8;
 
@@ -39,6 +40,7 @@ export const Login = () => {
         if (isFormValid) {
             // Handle login logic
             console.log("Logged in:", { email, password });
+            navigate("/Profile") ;
         }
     };
 

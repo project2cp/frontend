@@ -1,6 +1,19 @@
 import React from "react";
-import logo from "../assets/logo.png"
-export const Navbar = () => {
+import logo from "../assets/logo.png" ;
+
+export const Navbar =  ({ navItems = [] }) => {
+  // Default items if none provided
+  const defaultItems = [
+    { text: "About", href: "#about", className: "underline-effect" },
+    { text: "Gallery", href: "#gallery", className: "underline-effect" },
+    { text: "Host Event", href: "/signup", className: "underline-effect" },
+    { text: "Login", href: "/login", className: "btn-effect" },
+    { text: "Sign up", href: "/signup", className: "btn-effect" },
+  ];
+
+  // Use provided items or fallback to defaults
+  const itemsToRender = navItems.length > 0 ? navItems : defaultItems;
+
     return (
         <nav className="fixed top-0 left-0 w-full text-white px-6 py-2
                         mx-auto shadow-lg bg-opacity-80 backdrop-filter 
@@ -16,12 +29,14 @@ export const Navbar = () => {
                 </div>
                 <div> 
                 <ul className="flex space-x-5 pt-2 pr-4">
-                    <li><a href="#about" className="underline-effect">About</a></li>
-                    <li><a href="#gallery" className="underline-effect">Gallery</a></li>
-                    <li><a href="/signup" className="underline-effect">Host Event</a></li>
-                    <li><a href="/login" className="btn-effect">Login</a></li>
-                    <li><a href="/signup" className="btn-effect">Sign up</a></li>
-                </ul>
+            {itemsToRender.map((item, index) => (
+              <li key={index}>
+                <a href={item.href} className={item.className}>
+                  {item.text}
+                </a>
+              </li>
+            ))}
+            </ul>
 
                 </div>
             </div>
