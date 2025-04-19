@@ -5,7 +5,8 @@ import { Login } from "./components/Login";
 import { Signup } from "./components/Signup";
 import { Logout } from "./components/Logout";
 import { Test } from "./components/Test";
-import { OtpVerification } from "./components/OtpVerification"; // Corrected import path
+import { OtpVerification } from "./components/OtpVerification"; 
+import { Profile } from "./components/Profile";
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/test" element={<Test />} />
         <Route path="/verify-otp" element={<OtpVerification />} /> 
+        <Route  path="/profile" element={<Profile/>}/>
       </Routes>
     </Router>
   );

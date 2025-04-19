@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from "react";
 import validator from "validator";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
-import videoBg from "../assets/bg-vd1.mp4";
+import axios from 'axios';
+import {useNavigate} from 'react-router-dom';
+
 
 export const Login = () => {
+
+    const navigate = useNavigate(); 
+
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
@@ -34,11 +39,59 @@ export const Login = () => {
         setPasswordError(validatePassword(newPassword) || newPassword === "" ? "" : "Password must be 8+ characters");
     };
 
-    const handleSubmit = (e) => {
+    
+    const handleSubmit = async (e) => {  // Added async here
         e.preventDefault();
-        if (isFormValid) {
-            // Handle login logic
-            console.log("Logged in:", { email, password });
+        if (!isFormValid) return;
+
+        try {
+            // API Request
+            const response = await axios.post('/api/login', {
+                email: email,
+                password: password
+            }, {
+                headers: {  
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
+            });
+
+            // Handle successful response
+            if (response.status === 200) {  
+
+                // Store token in localStorage
+                localStorage.setItem('access_token', response.data.access_token);
+                
+                // Clear form fields
+                setEmail("");
+                setPassword("");
+                setEmailError("");
+                setPasswordError("");
+
+                // Redirect user (example using window.location)
+                navigate('/profile', { 
+                    state: { 
+                      email: email,
+                      message: response.data.message // Pass backend message if needed
+                    }
+                  });
+            }
+        } catch (error) {
+            // Handle errors
+            if (error.response) {
+                // Backend returned error response
+                const { status, data } = error.response;
+                
+                if (status === 404) {
+                    setEmailError(data.message || "Email not found");
+                } else if (status === 401) {
+                    setPasswordError(data.message || "Invalid password");
+                } else {
+                    console.error('Login error:', error);
+                }
+            } else {
+                console.error('Network error:', error);
+            }
         }
     };
 

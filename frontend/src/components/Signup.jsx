@@ -97,7 +97,7 @@ export const Signup = () => {
     
     if (isFormValid) {
       try {
-        const response = await axios.post('http://localhost:8000/api/register', {
+        const response = await axios.post('/api/register', {
           name: `${firstName} ${lastName}`,
           email: email,
           password: password,
