@@ -85,7 +85,7 @@ export const Profile = () => {
       <div className="flex pt-19">
         <Sidebar SidebarItems={SidebarItems} />
         <main className="flex-grow p-6 space-y-6 w-8/5">
-          <section className="bg-[#0f0f1f] p-6 rounded-lg border border-[#2c2c3e] space-y-4">
+          <section className=" p-6 rounded-lg border border-[#2c2c3e] space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Personal info</h2>
               <button
@@ -147,7 +147,7 @@ export const Profile = () => {
               </div>
             )}
           </section>
-          <section className="bg-[#0f0f1f] p-6 rounded-lg border border-[#2c2c3e] space-y-4">
+          <section className=" p-6 rounded-lg border border-[#2c2c3e] space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Bio</h2>
               <button
@@ -183,7 +183,7 @@ export const Profile = () => {
               <p className="text-gray-300 whitespace-pre-line">{userData.bio}</p>
             )}
           </section>
-          <section className="bg-[#0f0f1f] p-6 rounded-lg border border-[#2c2c3e] space-y-4 text-center">
+          <section className=" p-6 rounded-lg border border-[#2c2c3e] space-y-4 text-center">
             <h2 className="text-xl font-semibold">Profile Picture</h2>
             <div className="w-[200px] h-[200px] mx-auto bg-gray-700 rounded-full">
               {userData.profileImg && (
@@ -208,7 +208,7 @@ export const Profile = () => {
             </p>
           </section>
         </main>
-        <aside className="w-150 bg-[#0f0f1f] p-6 mb-6.5 pl-10 mr-6 mt-5.5 rounded-lg border border-[#2c2c3e] space-y-4">
+        <aside className="w-150  p-6 mb-6.5 pl-10 mr-6 mt-5.5 rounded-lg border border-[#2c2c3e] space-y-4">
           <div className="flex flex-col items-center space-y-4">
           <svg width={120} height={120}>
             {/* Background Circle */}
