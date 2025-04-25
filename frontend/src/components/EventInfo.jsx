@@ -3,6 +3,8 @@ import ai from '../assets/ai.jpeg'
 import hackthon from '../assets/hackthon.jpg' ;
 import { useNavigate } from 'react-router-dom';
 import { event } from "./event"; 
+import { Navbar } from "./Navbar";
+
 
 
 const similarEvents = [
@@ -11,22 +13,27 @@ const similarEvents = [
     { title: "Algiers Collective Arts Fair", date: "July 20-21, 2025", location: "Algiers, Algeria", category: "Arts", img: hackthon, },
 ];
 
-
+const navItems = [
+    { text: 'Home', href: '/', className: "underline-effect" },
+    { text: "Favorite", href: "/favorite-events", className: "underline-effect" },
+    { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
+    { text: "Username", href: "#", className: "underline-effect" },
+  ];
+  
 export const EventInfo = () => {
     const navigate = useNavigate();
 
     const handleEventClick = () => {
-      
+        
         navigate(`#`);
-    };
-
+      };
+      
     
     return (
 
         <div className="min-h-screen bg-v">
         {/* Navbar */}
-       
-  
+        <Navbar navItems={navItems} />
         {/* Main Container */}
         <div className="max-w-5xl mx-auto mt-8 p-6  rounded-xl shadow-lg">
           {/* Title */}
