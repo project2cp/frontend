@@ -18,7 +18,8 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/test" element={<Test />} />
         <Route path="/verify-otp" element={<OtpVerification />} /> 
-        <Route  path="/profile" element={<Profile/>}/>
+        <Route path="/profile" element={<Profile/>}/>
+        {/* <Route path="/explore" element={<ExplorePage/>} /> */}
       </Routes>
     </Router>
   );
