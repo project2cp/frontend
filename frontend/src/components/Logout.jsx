@@ -1,4 +1,5 @@
 import React from "react";
+import { Navbar } from "./Navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import videoBg from "../assets/bg-vd1.mp4";
 

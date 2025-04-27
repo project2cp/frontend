@@ -7,6 +7,7 @@ import { Logout } from "./components/Logout";
 import { Test } from "./components/Test";
 import { OtpVerification } from "./components/OtpVerification"; 
 import { Profile } from "./components/Profile";
+import { EventInfo } from "./components/EventInfo";
 
 function App() {
   return (
@@ -18,8 +19,8 @@ function App() {
         <Route path="/logout" element={<Logout />} />
         <Route path="/test" element={<Test />} />
         <Route path="/verify-otp" element={<OtpVerification />} /> 
-        <Route path="/profile" element={<Profile/>}/>
-        {/* <Route path="/explore" element={<ExplorePage/>} /> */}
+        <Route  path="/profile" element={<Profile/>}/>
+        <Route path="/eventinfo" element={<EventInfo/>}/>
       </Routes>
     </Router>
   );

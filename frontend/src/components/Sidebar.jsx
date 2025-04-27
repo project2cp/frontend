@@ -28,7 +28,7 @@ export const Sidebar = ({ sidebarItems = [] }) => {
   const itemsToRender = sidebarItems.length > 0 ? sidebarItems : defaultItems;
 
   return (
-    <aside className="ml-6 mb-6.5  mt-5.5 w-200 bg-[#0f0f1f] p-6 rounded-lg border border-[#2c2c3e] ">
+    <aside className="ml-6 mb-6.5  mt-5.5 w-200 p-6 rounded-lg border border-[#2c2c3e] ">
       {Object.keys(itemsToRender).map((section, index) => (
         <div key={section}>
           <h3 className="text-lg font-semibold mb-4">{section}</h3>
