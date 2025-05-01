@@ -183,7 +183,7 @@ export const Profile = () => {
               <p className="text-gray-300 whitespace-pre-line">{userData.bio}</p>
             )}
           </section>
-          <section className=" p-6 rounded-lg border border-[#2c2c3e] space-y-4 text-center">
+          <section className=" p-6  rounded-lg border border-[#2c2c3e] space-y-4 text-center">
             <h2 className="text-xl font-semibold">Profile Picture</h2>
             <div className="w-[200px] h-[200px] mx-auto bg-gray-700 rounded-full">
               {userData.profileImg && (
@@ -242,9 +242,15 @@ export const Profile = () => {
                   <span>
                     {step.label} ({step.percentage}%)
                   </span>
+                  
                 </li>
               ))}
             </ul>
+            <a href="/signup" className="block mt-[50px]">
+  <button className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-full">
+    Be an organizer
+  </button>
+</a>
           </div>
         </aside>
       </div>
