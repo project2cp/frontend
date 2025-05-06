@@ -85,7 +85,7 @@ export const Profile = () => {
       <div className="flex pt-19">
         <Sidebar SidebarItems={SidebarItems} />
         <main className="flex-grow p-6 space-y-6 w-8/5">
-          <section className=" p-6 rounded-lg border border-[#2c2c3e] space-y-4">
+          <section className=" p-6 rounded-lg border border-gray-300 space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Personal info</h2>
               <button

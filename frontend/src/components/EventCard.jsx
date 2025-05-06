@@ -28,15 +28,15 @@ export const EventCard = ({ event, onClick }) => {
         {organizer && (
           <div className="mt-2 text-sm">
             Organized by: {" "}
-            <a href="#" className="text-purple-600 hover:underline">
+            <a href="#" className="text-purple-600 underline">
               {organizer}
             </a>
           </div>
         )}
 
         <div className="mt-2 text-sm">
-          <span className="font-semibold text-purple-800">Category:</span>{" "}
-          <span className="text-purple-600">{category}</span>
+          <span className="text-sm ">Category:</span>{" "}
+          <span className="text-gray-600">{category}</span>
         </div>
         
         <button className="mt-auto w-full bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
