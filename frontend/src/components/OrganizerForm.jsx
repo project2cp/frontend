@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FaCheck, FaEnvelope, FaInfoCircle, FaPhone, FaMapMarker, FaGlobe, FaBuilding, FaImage, FaUserPlus, FaCog } from 'react-icons/fa';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
+import { Navbar } from './Navbar';
 
 const initialFormData = {
   email: '',
@@ -94,7 +95,13 @@ export const OrganizerForm = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
-      <div className="max-w-4xl mx-auto px-4 relative">
+      <Navbar navItems={[
+        { text: 'Home', href: '/', className: "underline-effect" },
+        { text: "Favorite", href: "/favorite-events", className: "underline-effect" },
+        { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
+        { text: "Username", href: "#", className: "underline-effect" },
+      ]} />
+      <div className="max-w-3xl mx-auto px-4 relative pt-16">
         {/* Title & Subtitle */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
@@ -110,7 +117,7 @@ export const OrganizerForm = () => {
           {steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center flex-1">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center 
-                ${currentStep > index  ? 'bg-green-500' : currentStep === index + 1 ? 'bg-[#c4adf4]' : 'bg-gray-300'}
+                ${currentStep > index + 1  ? 'bg-green-500' : currentStep === index + 1 ? 'bg-[#c4adf4]' : 'bg-gray-300'}
                 transition-colors duration-300`}>
                 {currentStep > index + 1 ? <FaCheck className="text-white" /> : 
                  React.cloneElement(step.icon, { className: 'text-white' })}
