@@ -8,6 +8,9 @@ import { Test } from "./components/Test";
 import { OtpVerification } from "./components/OtpVerification"; 
 import { Profile } from "./components/Profile";
 import { EventInfo } from "./components/EventInfo";
+import { ExplorePage } from "./components/ExplorePage";
+import { OrganizerForm  } from "./components/OrganizerForm";
+
 
 function App() {
   return (
@@ -21,6 +24,9 @@ function App() {
         <Route path="/verify-otp" element={<OtpVerification />} /> 
         <Route  path="/profile" element={<Profile/>}/>
         <Route path="/eventinfo" element={<EventInfo/>}/>
+        <Route path="/explore" element={<ExplorePage/>}/>
+        <Route path="/Organizer" element={<OrganizerForm />} />
+
       </Routes>
     </Router>
   );
