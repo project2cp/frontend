@@ -2,107 +2,101 @@ import React, { useState, useEffect } from "react";
 import validator from "validator";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 import axios from 'axios';
-import {useNavigate} from 'react-router-dom';
-
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 export const Login = () => {
-
-    const navigate = useNavigate(); 
-
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [emailError, setEmailError] = useState("");
     const [passwordError, setPasswordError] = useState("");
     const [isFormValid, setIsFormValid] = useState(false);
+    const [loginError, setLoginError] = useState("");
 
-    // Validation logic (same as previous)
-    const validatePassword = (password) => password.length >= 8;
+    // Handle verification redirect parameters
+    useEffect(() => {
+        const verificationError = searchParams.get('verification_error');
+        const verificationSuccess = searchParams.get('verification');
+        
+        if (verificationError) {
+            setLoginError(
+                verificationError === 'invalid_token' 
+                    ? 'Invalid verification link' 
+                    : 'Email already verified'
+            );
+        }
+        
+        if (verificationSuccess === 'success') {
+            setLoginError('Email verified successfully! Please login');
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         setIsFormValid(
-            emailError === "" &&
-            passwordError === "" &&
-            email !== "" &&
-            password !== ""
+            validator.isEmail(email) &&
+            password.length >= 8
         );
-    }, [emailError, passwordError, email, password]);
+    }, [email, password]);
 
     const handleEmailChange = (e) => {
-        const newEmail = e.target.value;
-        setEmail(newEmail);
-        setEmailError(validator.isEmail(newEmail) || newEmail === "" ? "" : "Invalid email");
+        setEmail(e.target.value);
+        setEmailError("");
+        setLoginError("");
     };
 
     const handlePasswordChange = (e) => {
-        const newPassword = e.target.value;
-        setPassword(newPassword);
-        setPasswordError(validatePassword(newPassword) || newPassword === "" ? "" : "Password must be 8+ characters");
+        setPassword(e.target.value);
+        setPasswordError("");
+        setLoginError("");
     };
 
-    
-    const handleSubmit = async (e) => {  // Added async here
+    const handleSubmit = async (e) => {
         e.preventDefault();
         if (!isFormValid) return;
 
         try {
-            // API Request
             const response = await axios.post('/api/login', {
-                email: email,
-                password: password
-            }, {
-                headers: {  
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                }
+                email,
+                password
             });
 
-            // Handle successful response
-            if (response.status === 200) {  
-
-                // Store token in localStorage
-                localStorage.setItem('access_token', response.data.access_token);
-                
-                // Clear form fields
-                setEmail("");
-                setPassword("");
-                setEmailError("");
-                setPasswordError("");
-
-                // Redirect user (example using window.location)
-                navigate('/profile', { 
-                    state: { 
-                      email: email,
-                      message: response.data.message // Pass backend message if needed
-                    }
-                  });
+            if (response.data.access_token) {
+                localStorage.setItem('token', response.data.access_token);
+                navigate('/profile');
             }
         } catch (error) {
-            // Handle errors
             if (error.response) {
-                // Backend returned error response
                 const { status, data } = error.response;
                 
-                if (status === 404) {
-                    setEmailError(data.message || "Email not found");
-                } else if (status === 401) {
+                if (status === 401) {
                     setPasswordError(data.message || "Invalid password");
+                } else if (status === 403) {
+                    setLoginError("Please verify your email first");
+                } else if (status === 404) {
+                    setEmailError(data.message || "Email not found");
                 } else {
-                    console.error('Login error:', error);
+                    setLoginError("Login failed. Please try again.");
                 }
             } else {
-                console.error('Network error:', error);
+                setLoginError("Network error. Please check your connection.");
             }
         }
     };
 
     return (
         <div className="h-screen flex items-center justify-center overflow-hidden login">
-           
-            {/* Glass Effect Card */}
             <div className="relative z-10 w-full h-fit max-w-md bg-[rgba(93,51,139,0.2)] rounded-2xl backdrop-blur-lg border border-[rgba(255,255,255,0.1)] shadow-2xl p-6 mx-4 my-10">
                 <div className="text-center mb-6">
                     <h1 className="text-4xl font-bold text-white mb-2">Welcome Back</h1>
                     <p className="text-gray-300">Sign in to continue</p>
+                    {loginError && (
+                        <div className={`mt-2 text-sm ${
+                            loginError.includes('success') ? 'text-green-400' : 'text-red-400'
+                        }`}>
+                            {loginError}
+                        </div>
+                    )}
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3">
@@ -115,8 +109,8 @@ export const Login = () => {
                             onChange={handleEmailChange}
                             placeholder="Enter your email"
                             className={`w-full p-3 rounded-lg bg-[rgba(255,255,255,0.1)] border ${
-                                emailError ? "border-red-400" : "border-[rgba(255,255,255,0.2)]  focus:ring-1 focus:ring-purple-300"
-                            } text-white placeholder-gray-400 focus:outline-none `}
+                                emailError ? "border-red-400" : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
+                            } text-white placeholder-gray-400 focus:outline-none`}
                         />
                         {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
                     </div>
@@ -131,7 +125,7 @@ export const Login = () => {
                             placeholder="Enter your password"
                             className={`w-full p-3 rounded-lg bg-[rgba(255,255,255,0.1)] border ${
                                 passwordError ? "border-red-400" : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
-                            } text-white placeholder-gray-400 focus:outline-none `}
+                            } text-white placeholder-gray-400 focus:outline-none`}
                         />
                         {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
                     </div>
@@ -170,9 +164,6 @@ export const Login = () => {
                         <div className="flex-grow border-t border-gray-500"></div>
                     </div>
 
-
-
-
                     <div className="flex justify-center space-x-4">
                         <button className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
                             <FaGoogle className="text-xl text-white" />
@@ -188,7 +179,7 @@ export const Login = () => {
                     {/* Sign Up Link */}
                     <p className="text-center text-gray-400 text-sm">
                         Don't have an account?{" "}
-                        <a href="#" className="text-purple-300 hover:text-purple-200">
+                        <a href="/register" className="text-purple-300 hover:text-purple-200">
                             Sign up
                         </a>
                     </p>

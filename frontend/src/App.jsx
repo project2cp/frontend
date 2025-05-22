@@ -5,7 +5,8 @@ import { Login } from "./components/Login";
 import { Signup } from "./components/Signup";
 import { Logout } from "./components/Logout";
 import { Test } from "./components/Test";
-import { OtpVerification } from "./components/OtpVerification"; 
+import { EmailVerification } from "./components/EmailVerification ";
+import { EmailVerificationPrompt } from "./components/EmailVerificationPrompt";
 import { Profile } from "./components/Profile";
 import { EventInfo } from "./components/EventInfo";
 import { ExplorePage } from "./components/ExplorePage";
@@ -22,7 +23,8 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/logout" element={<Logout />} />
         <Route path="/test" element={<Test />} />
-        <Route path="/verify-otp" element={<OtpVerification />} /> 
+        <Route path="/verify-email" element={<EmailVerificationPrompt />} /> 
+        <Route path= "/email/verify" element={<EmailVerification/>}/>
         <Route path="/profile" element={<Profile/>}/>
         <Route path="/eventinfo" element={<EventInfo/>}/>
         <Route path="/explore" element={<ExplorePage/>}/>

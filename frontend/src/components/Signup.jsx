@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { FaFacebookF, FaGoogle, FaApple } from "react-icons/fa";
 
 export const Signup = () => {
-
   const navigate = useNavigate();
 
   const [firstName, setFirstName] = useState("");
@@ -19,8 +18,8 @@ export const Signup = () => {
   const [emailError, setEmailError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [confirmPasswordError, setConfirmPasswordError] = useState("");
-  const [signupSuccess, setSignupSuccess] = useState(false);
   const [signupError, setSignupError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isFormValid, setIsFormValid] = useState(false);
 
@@ -33,9 +32,9 @@ export const Signup = () => {
       emailError === "" &&
       passwordError === "" &&
       confirmPasswordError === "" &&
-      firstName !== "" &&
-      lastName !== "" &&
-      email !== "" &&
+      firstName.trim() !== "" &&
+      lastName.trim() !== "" &&
+      email.trim() !== "" &&
       password !== "" &&
       confirmPassword !== ""
     );
@@ -55,13 +54,13 @@ export const Signup = () => {
   const handleFirstNameChange = (e) => {
     const newFirstName = e.target.value;
     setFirstName(newFirstName);
-    setFirstNameError(newFirstName ? "" : "First name is required");
+    setFirstNameError(newFirstName.trim() ? "" : "First name is required");
   };
 
   const handleLastNameChange = (e) => {
     const newLastName = e.target.value;
     setLastName(newLastName);
-    setLastNameError(newLastName ? "" : "Last name is required");
+    setLastNameError(newLastName.trim() ? "" : "Last name is required");
   };
 
   const handleEmailChange = (e) => {
@@ -94,64 +93,46 @@ export const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSignupError("");
-    
+    setIsLoading(true);
+
     if (isFormValid) {
       try {
-        const response = await axios.post('/api/register', {
-          name: `${firstName} ${lastName}`,
-          email: email,
+        const payload = {
+          name: `${firstName.trim()} ${lastName.trim()}`,
+          email: email.toLowerCase().trim(),
           password: password,
-          password_confirmation: confirmPassword
-        }, {
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+          password_confirmation: confirmPassword,
+        };
+
+        const response = await axios.post(
+          "/api/register",
+          payload,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              "Accept": "application/json",
+            },
           }
-        });
+        );
 
         if (response.status === 201) {
-          // Clear form fields
-          setFirstName("");
-          setLastName("");
-          setEmail("");
-          setPassword("");
-          setConfirmPassword("");
-          
-          // Set success state and redirect
-          setSignupSuccess(true);
-          setSignupError("");
-          
-          // Redirect to OTP verification page with email
-          navigate('/verify-otp', { 
-            state: { 
-              email: email,
-              message: response.data.message // Pass backend message if needed
-            }
+          navigate("/verify-email", { 
+            state: { email: email.trim() } 
           });
         }
       } catch (error) {
-        if (error.response && error.response.data.errors) {
-          const backendErrors = error.response.data.errors;
-          
-          Object.entries(backendErrors).forEach(([field, messages]) => {
-            const errorMessage = messages.join(' ');
-            switch(field) {
-              case 'name':
-                setFirstNameError(errorMessage);
-                break;
-              case 'email':
-                setEmailError(errorMessage);
-                break;
-              case 'password':
-                setPasswordError(errorMessage);
-                break;
-              default:
-                setSignupError(errorMessage);
-            }
-          });
-        } else {
-          setSignupError("An error occurred during registration. Please try again.");
+        if (error.response?.data?.errors) {
+          const errors = error.response.data.errors;
+          if (errors.email) setEmailError(errors.email.join(' '));
+          if (errors.password) setPasswordError(errors.password.join(' '));
+          if (errors.name) setSignupError(errors.name.join(' '));
         }
+        setSignupError(
+          error.response?.data?.message || 
+          'An error occurred. Please try again.'
+        );
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -165,21 +146,15 @@ export const Signup = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {signupSuccess && (
-            <div className="text-green-400 text-center mb-4">
-              Registration successful! Please check your email for verification.
-            </div>
-          )}
-
           {signupError && (
-            <div className="text-red-400 text-center mb-4">
-              {signupError}
-            </div>
+            <div className="text-red-400 text-center mb-4">{signupError}</div>
           )}
 
           <div className="flex space-x-3">
             <div className="w-1/2">
-              <label className="block text-gray-300 text-sm mb-2">First Name</label>
+              <label className="block text-gray-300 text-sm mb-2">
+                First Name
+              </label>
               <input
                 type="text"
                 value={firstName}
@@ -190,12 +165,15 @@ export const Signup = () => {
                     ? "border-red-400"
                     : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
                 } text-white placeholder-gray-400 focus:outline-none`}
-                style={{"WebkitBoxShadow": "0 0 0 1000px rgba(255, 255, 255, 0.1) inset"}}
               />
-              {firstNameError && <p className="text-red-400 text-sm mt-1">{firstNameError}</p>}
+              {firstNameError && (
+                <p className="text-red-400 text-sm mt-1">{firstNameError}</p>
+              )}
             </div>
             <div className="w-1/2">
-              <label className="block text-gray-300 text-sm mb-2">Last Name</label>
+              <label className="block text-gray-300 text-sm mb-2">
+                Last Name
+              </label>
               <input
                 type="text"
                 value={lastName}
@@ -206,9 +184,10 @@ export const Signup = () => {
                     ? "border-red-400"
                     : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
                 } text-white placeholder-gray-400 focus:outline-none`}
-                style={{"WebkitBoxShadow": "0 0 0 1000px rgba(255, 255, 255, 0.1) inset"}}
               />
-              {lastNameError && <p className="text-red-400 text-sm mt-1">{lastNameError}</p>}
+              {lastNameError && (
+                <p className="text-red-400 text-sm mt-1">{lastNameError}</p>
+              )}
             </div>
           </div>
 
@@ -224,9 +203,10 @@ export const Signup = () => {
                   ? "border-red-400"
                   : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
               } text-white placeholder-gray-400 focus:outline-none`}
-              style={{"WebkitBoxShadow": "0 0 0 1000px rgba(255, 255, 255, 0.1) inset"}}
             />
-            {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
+            {emailError && (
+              <p className="text-red-400 text-sm mt-1">{emailError}</p>
+            )}
           </div>
 
           <div>
@@ -241,13 +221,16 @@ export const Signup = () => {
                   ? "border-red-400"
                   : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
               } text-white placeholder-gray-400 focus:outline-none`}
-              style={{"WebkitBoxShadow": "0 0 0 1000px rgba(255, 255, 255, 0.1) inset"}}
             />
-            {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
+            {passwordError && (
+              <p className="text-red-400 text-sm mt-1">{passwordError}</p>
+            )}
           </div>
 
           <div>
-            <label className="block text-gray-300 text-sm mb-2">Confirm Password</label>
+            <label className="block text-gray-300 text-sm mb-2">
+              Confirm Password
+            </label>
             <input
               type="password"
               value={confirmPassword}
@@ -258,21 +241,22 @@ export const Signup = () => {
                   ? "border-red-400"
                   : "border-[rgba(255,255,255,0.2)] focus:ring-1 focus:ring-purple-300"
               } text-white placeholder-gray-400 focus:outline-none`}
-              style={{"WebkitBoxShadow": "0 0 0 1000px rgba(255, 255, 255, 0.1) inset"}}
             />
-            {confirmPasswordError && <p className="text-red-400 text-sm mt-1">{confirmPasswordError}</p>}
+            {confirmPasswordError && (
+              <p className="text-red-400 text-sm mt-1">{confirmPasswordError}</p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={!isFormValid}
+            disabled={!isFormValid || isLoading}
             className={`w-full py-3 rounded-lg font-semibold transition-colors ${
-              isFormValid
+              isFormValid && !isLoading
                 ? "bg-purple-600 text-white hover:bg-purple-700"
                 : "bg-gray-500/50 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Sign Up
+            {isLoading ? 'Creating Account...' : 'Sign Up'}
           </button>
 
           <div className="relative my-4 flex items-center">
@@ -282,13 +266,13 @@ export const Signup = () => {
           </div>
 
           <div className="flex justify-center space-x-4">
-            <button className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
+            <button type="button" className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
               <FaGoogle className="text-2xl text-white" />
             </button>
-            <button className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
+            <button type="button" className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
               <FaFacebookF className="text-2xl text-white" />
             </button>
-            <button className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
+            <button type="button" className="p-3 rounded-full bg-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.2)] transition-colors">
               <FaApple className="text-2xl text-white" />
             </button>
           </div>
