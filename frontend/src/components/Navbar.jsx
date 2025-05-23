@@ -7,6 +7,7 @@ export const Navbar = ({ navItems = [] }) => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -16,7 +17,7 @@ export const Navbar = ({ navItems = [] }) => {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
-        .then(data => setUserData(data))
+        .then(data => setUserData(data.user || data)) // Handle both nested and flat response
         .catch(console.error);
     }
   }, []);
@@ -47,7 +48,7 @@ export const Navbar = ({ navItems = [] }) => {
               >
                 {userData?.profile_photo ? (
                   <img 
-                    src={`${process.env.REACT_APP_API_URL}/storage/${userData.profile_photo}`}
+                    src={`${API_BASE_URL}/storage/${userData.profile_photo}`}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -71,12 +72,8 @@ export const Navbar = ({ navItems = [] }) => {
         }
       ]
     : [
-        <li key="login">
-          <a href="/login" className="btn-effect">Login</a>
-        </li>,
-        <li key="signup">
-          <a href="/signup" className="btn-effect">Sign up</a>
-        </li>
+        { text: "Login", href: "/login", className: "btn-effect" },
+        { text: "Sign up", href: "/signup", className: "btn-effect" }
       ];
 
   return (

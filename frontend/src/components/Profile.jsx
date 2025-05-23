@@ -23,6 +23,7 @@ export const Profile = () => {
   const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -90,9 +91,9 @@ export const Profile = () => {
           phone_number: data.phone_number || "",
           location: data.location || "",
           bio: data.bio || "",
-          profile_photo: data.profile_photo
-            ? `${process.env.REACT_APP_API_URL}/storage/${data.profile_photo}`
-            : null,
+          profile_photo: data.profile_photo 
+          ? `${API_BASE_URL}/storage/${data.profile_photo}`
+          : null,
           notificationEnabled: data.notificationEnabled ?? true,
           payementMethode: data.payementMethode || [],
         });
@@ -131,12 +132,14 @@ export const Profile = () => {
 
     const formData = new FormData();
     formData.append("profile_photo", file);
+    formData.append("_method", "PUT"); // Simulate PUT request
 
     try {
       const response = await fetch("/api/profile", {
-        method: "PUT",
+        method: "POST", // Use POST to match Postman test
         headers: {
           Authorization: `Bearer ${token}`,
+          // Do not set Content-Type; fetch will handle multipart/form-data automatically
         },
         body: formData,
       });
@@ -154,7 +157,9 @@ export const Profile = () => {
       const data = await response.json();
       setUserData((prev) => ({
         ...prev,
-        profile_photo: `${process.env.REACT_APP_API_URL}/storage/${data.user.profile_photo}`,
+        profile_photo: data.user.profile_photo 
+          ? `${API_BASE_URL}/storage/${data.user.profile_photo}`
+          : null,
       }));
     } catch (error) {
       setAuthError(error.message || "An error occurred while uploading the photo.");
@@ -302,8 +307,6 @@ export const Profile = () => {
     return null;
   };
 
-
-
   const SidebarItems = [
     { text: "Contact info", link: "/contact-info", className: "" },
     { text: "Change email", link: "/change-email", className: "" },
@@ -392,7 +395,7 @@ export const Profile = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] text-white font-sans">
       {renderVerificationAlerts()}
-      <Navbar  />
+      <Navbar />
       <div className="flex pt-19">
         <Sidebar SidebarItems={SidebarItems} />
         <main className="flex-grow p-6 space-y-6 w-8/5">
@@ -529,7 +532,7 @@ export const Profile = () => {
             <div className="w-[200px] h-[200px] mx-auto bg-gray-700 rounded-full overflow-hidden">
               {userData.profile_photo ? (
                 <img
-                  src={userData.profile_photo}
+                  src={`${API_BASE_URL}/storage/${userData.profile_photo}`}
                   alt="Profile"
                   className="w-full h-full object-cover"
                 />
