@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCheck, FaCalendarAlt, FaTicketAlt, FaMapMarker, FaImage, FaInfoCircle, FaClock, FaAlignLeft } from 'react-icons/fa';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
 import { Navbar } from './Navbar';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const initialEventData = {
   eventName: '',
@@ -19,57 +20,126 @@ const eventTypes = ['Conference', 'Concert', 'Workshop', 'Exhibition', 'Networki
 const ticketTypes = ['General Admission', 'VIP', 'Early Bird', 'Student'];
 
 export const EventForm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(initialEventData);
   const [errors, setErrors] = useState({});
+  const [authError, setAuthError] = useState(null);
 
-  const steps = [
-    { title: 'Event Basics', icon: <FaInfoCircle /> },
-    { title: 'Event Details', icon: <FaMapMarker /> },
-    { title: 'Finalize', icon: <FaCheck /> },
-  ];
+  // Authentication and organizer verification
+  useEffect(() => {
+    const verifyOrganizerStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        handleAuthRedirect();
+        return;
+      }
 
+      try {
+        const response = await fetch('/api/organizers/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            navigate(`/organizer-form?redirect=${encodeURIComponent(location.pathname)}`, { 
+              replace: true,
+              state: { error: 'You need to be an organizer to create events' }
+            });
+          } else {
+            throw new Error('Failed to verify organizer status');
+          }
+        }
+      } catch (error) {
+        console.error('Organizer verification error:', error);
+        setAuthError('Error verifying organizer status. Please try again.');
+      }
+    };
+
+    verifyOrganizerStatus();
+  }, [navigate, location.pathname]);
+
+  const handleAuthRedirect = () => {
+    setAuthError('Please log in to create events');
+    localStorage.setItem('redirectAfterLogin', location.pathname);
+    navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
+  };
+
+  // Form validation
   const validateStep = (step) => {
     const newErrors = {};
     
-    if(step === 1) {
-      if(!formData.eventName) newErrors.eventName = 'Event name is required';
-      if(!formData.eventType) newErrors.eventType = 'Event type is required';
-      if(!formData.date) newErrors.date = 'Date is required';
+    // Step 1 Validation
+    if (step === 1) {
+      if (!formData.eventName.trim()) newErrors.eventName = 'Event name is required';
+      if (!formData.eventType) newErrors.eventType = 'Event type is required';
+      if (!formData.date) newErrors.date = 'Date is required';
+      if (!formData.time) newErrors.time = 'Time is required';
     }
     
-    if(step === 2) {
-      if(!formData.description) newErrors.description = 'Description is required';
-      if(!formData.location) newErrors.location = 'Location is required';
-      if(!formData.tickets.length) newErrors.tickets = 'At least one ticket type is required';
-      if(!formData.eventImage) newErrors.eventImage = 'Event image is required';
+    // Step 2 Validation
+    if (step === 2) {
+      if (!formData.description.trim()) newErrors.description = 'Description is required';
+      if (!formData.location.trim()) newErrors.location = 'Location is required';
+      if (!formData.eventImage) newErrors.eventImage = 'Event image is required';
+      
+      // Ticket validation
+      if (formData.tickets.length === 0) {
+        newErrors.tickets = 'At least one ticket type is required';
+      } else {
+        formData.tickets.forEach((ticket, index) => {
+          if (!ticket.type) newErrors[`ticketType${index}`] = `Ticket type ${index + 1} is required`;
+          if (!ticket.price || ticket.price <= 0) newErrors[`ticketPrice${index}`] = `Valid price required for ticket ${index + 1}`;
+          if (!ticket.quantity || ticket.quantity <= 0) newErrors[`ticketQuantity${index}`] = `Valid quantity required for ticket ${index + 1}`;
+        });
+      }
     }
     
+    // Step 3 Validation
+    if (step === 3 && !formData.termsAccepted) {
+      newErrors.termsAccepted = 'You must agree to the terms and conditions';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleNext = () => {
-    if(validateStep(currentStep)) setCurrentStep(prev => Math.min(prev + 1, 3));
-  };
-
+  // Form navigation
+  const handleNext = () => validateStep(currentStep) && setCurrentStep(prev => Math.min(prev + 1, 3));
   const handlePrevious = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
+  // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setErrors(prev => ({ ...prev, [name]: '' }));
   };
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if(file) setFormData(prev => ({ ...prev, eventImage: URL.createObjectURL(file) }));
+    if (file) {
+      setFormData(prev => ({
+        ...prev,
+        eventImage: file,
+        eventImagePreview: URL.createObjectURL(file)
+      }));
+      setErrors(prev => ({ ...prev, eventImage: '' }));
+    }
   };
 
   const handleTicketChange = (index, field, value) => {
     const newTickets = [...formData.tickets];
     newTickets[index] = { ...newTickets[index], [field]: value };
     setFormData(prev => ({ ...prev, tickets: newTickets }));
+    setErrors(prev => ({ 
+      ...prev, 
+      [`ticketType${index}`]: '',
+      [`ticketPrice${index}`]: '',
+      [`ticketQuantity${index}`]: '' 
+    }));
   };
 
   const addTicketType = () => {
@@ -79,16 +149,69 @@ export const EventForm = () => {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log('Event submitted:', formData);
-    setIsSubmitted(true);
+  // Form submission
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return;
+    setIsSubmitting(true);
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('name', formData.eventName);
+    formDataToSend.append('type', formData.eventType);
+    formDataToSend.append('date', formData.date);
+    formDataToSend.append('time', formData.time);
+    formDataToSend.append('description', formData.description);
+    formDataToSend.append('location', formData.location);
+    formDataToSend.append('image', formData.eventImage);
+    formDataToSend.append('tickets', JSON.stringify(formData.tickets));
+
+    try {
+      const response = await fetch('/api/organizers/event', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formDataToSend,
+      });
+
+      const contentType = response.headers.get('content-type');
+      
+      if (!response.ok) {
+        const errorData = contentType?.includes('application/json')
+          ? await response.json()
+          : { message: `HTTP error! status: ${response.status}` };
+        throw new Error(errorData.message || 'Event creation failed');
+      }
+
+      const data = await response.json();
+      setIsSubmitted(true);
+      console.log('Event created successfully:', data);
+
+    } catch (error) {
+      setErrors({ submit: error.message });
+      console.error('Event creation error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
+  // Reset form
   const handleReset = () => {
     setIsSubmitted(false);
     setCurrentStep(1);
     setFormData(initialEventData);
+    setErrors({});
   };
+
+  if (authError) {
+    return null; // Redirection handled in useEffect
+  }
+
+  // Steps configuration
+  const steps = [
+    { title: 'Event Basics', icon: <FaInfoCircle /> },
+    { title: 'Event Details', icon: <FaMapMarker /> },
+    { title: 'Finalize', icon: <FaCheck /> },
+  ];
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
@@ -98,6 +221,7 @@ export const EventForm = () => {
         { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
         { text: "Username", href: "#", className: "underline-effect" },
       ]} />
+
       <div className="max-w-3xl mx-auto px-4 relative pt-16">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">Create Your Event</h1>
@@ -124,18 +248,20 @@ export const EventForm = () => {
           ))}
         </div>
 
-        {/* Form Container */}
+        {/* Form Content */}
         <div className="relative">
           <div className={`bg-white rounded-xl shadow-lg p-8 transition-opacity ${isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
             
+            {/* Step 1: Event Basics */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
                   <FaInfoCircle className="text-[#c4adf4]" /> Event Basics
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Event Name */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Event Name <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium mb-2">Event Name *</label>
                     <input
                       name="eventName"
                       value={formData.eventName}
@@ -145,9 +271,10 @@ export const EventForm = () => {
                     />
                     {errors.eventName && <p className="text-red-500 text-sm mt-1">{errors.eventName}</p>}
                   </div>
-                  
+
+                  {/* Event Type */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Event Type <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium mb-2">Event Type *</label>
                     <select
                       name="eventType"
                       value={formData.eventType}
@@ -162,8 +289,9 @@ export const EventForm = () => {
                     {errors.eventType && <p className="text-red-500 text-sm mt-1">{errors.eventType}</p>}
                   </div>
 
+                  {/* Date */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Date <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium mb-2">Date *</label>
                     <div className="flex items-center gap-2">
                       <FaCalendarAlt className="text-gray-400" />
                       <input
@@ -177,8 +305,9 @@ export const EventForm = () => {
                     {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
                   </div>
 
+                  {/* Time */}
                   <div>
-                    <label className="block text-sm font-medium mb-2">Time <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-medium mb-2">Time *</label>
                     <div className="flex items-center gap-2">
                       <FaClock className="text-gray-400" />
                       <input
@@ -189,108 +318,123 @@ export const EventForm = () => {
                         className="w-full p-3 border rounded-lg"
                       />
                     </div>
+                    {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time}</p>}
                   </div>
                 </div>
               </div>
             )}
 
+            {/* Step 2: Event Details */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
                   <FaMapMarker className="text-[#c4adf4]" /> Event Details
                 </h2>
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Description <span className="text-red-500">*</span></label>
-                    <div className="flex items-start gap-2">
-                      <FaAlignLeft className="text-gray-400 mt-3" />
-                      <textarea
-                        name="description"
-                        value={formData.description}
-                        onChange={handleInputChange}
-                        placeholder="Describe your event in detail..."
-                        rows="4"
-                        className="w-full p-3 border rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#c4adf4] resize-none"
-                      />
-                    </div>
-                    {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Description *</label>
+                  <div className="flex items-start gap-2">
+                    <FaAlignLeft className="text-gray-400 mt-3" />
+                    <textarea
+                      name="description"
+                      value={formData.description}
+                      onChange={handleInputChange}
+                      placeholder="Describe your event in detail..."
+                      rows="4"
+                      className="w-full p-3 border rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#c4adf4] resize-none"
+                    />
                   </div>
+                  {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Location <span className="text-red-500">*</span></label>
-                    <div className="flex items-center gap-2">
-                      <FaMapMarker className="text-gray-400" />
-                      <input
-                        name="location"
-                        value={formData.location}
-                        onChange={handleInputChange}
-                        placeholder="Enter event location"
-                        className="w-full p-3 border rounded-lg placeholder-gray-400"
-                      />
-                    </div>
-                    {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Location *</label>
+                  <div className="flex items-center gap-2">
+                    <FaMapMarker className="text-gray-400" />
+                    <input
+                      name="location"
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      placeholder="Enter event location"
+                      className="w-full p-3 border rounded-lg placeholder-gray-400"
+                    />
                   </div>
+                  {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Event Image <span className="text-red-500">*</span></label>
-                    <div className="flex items-center gap-2">
-                      <FaImage className="text-gray-400" />
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="w-full p-3 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#c4adf4] file:text-white hover:file:bg-[#a790d8]"
-                      />
-                    </div>
-                    {formData.eventImage && (
-                      <img src={formData.eventImage} alt="Event preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />
-                    )}
-                    {errors.eventImage && <p className="text-red-500 text-sm mt-1">{errors.eventImage}</p>}
+                {/* Event Image */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Event Image *</label>
+                  <div className="flex items-center gap-2">
+                    <FaImage className="text-gray-400" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="w-full p-3 border rounded-lg file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-[#c4adf4] file:text-white hover:file:bg-[#a790d8]"
+                    />
                   </div>
+                  {formData.eventImagePreview && (
+                    <img src={formData.eventImagePreview} alt="Event preview" className="mt-4 w-48 h-32 object-cover rounded-lg" />
+                  )}
+                  {errors.eventImage && <p className="text-red-500 text-sm mt-1">{errors.eventImage}</p>}
+                </div>
 
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Ticket Types <span className="text-red-500">*</span></label>
-                    {formData.tickets.map((ticket, index) => (
-                      <div key={index} className="grid grid-cols-3 gap-4 mb-4">
+                {/* Tickets */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">Ticket Types *</label>
+                  {formData.tickets.map((ticket, index) => (
+                    <div key={index} className="grid grid-cols-3 gap-4 mb-4">
+                      <div>
                         <select
                           value={ticket.type}
                           onChange={(e) => handleTicketChange(index, 'type', e.target.value)}
-                          className="p-2 border rounded-lg"
+                          className="p-2 border rounded-lg w-full"
                         >
                           <option value="" disabled>Select ticket type</option>
                           {ticketTypes.map(type => (
                             <option key={type} value={type}>{type}</option>
                           ))}
                         </select>
+                        {errors[`ticketType${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketType${index}`]}</p>}
+                      </div>
+                      <div>
                         <input
                           type="number"
                           placeholder="Price"
                           value={ticket.price}
                           onChange={(e) => handleTicketChange(index, 'price', e.target.value)}
-                          className="p-2 border rounded-lg placeholder-gray-400"
+                          className="p-2 border rounded-lg placeholder-gray-400 w-full"
                         />
+                        {errors[`ticketPrice${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketPrice${index}`]}</p>}
+                      </div>
+                      <div>
                         <input
                           type="number"
                           placeholder="Quantity"
                           value={ticket.quantity}
                           onChange={(e) => handleTicketChange(index, 'quantity', e.target.value)}
-                          className="p-2 border rounded-lg placeholder-gray-400"
+                          className="p-2 border rounded-lg placeholder-gray-400 w-full"
                         />
+                        {errors[`ticketQuantity${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketQuantity${index}`]}</p>}
                       </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={addTicketType}
-                      className="text-[#4a2c8a] text-sm flex items-center gap-1 hover:text-[#6b4ba5]"
-                    >
-                      <FaTicketAlt /> Add Ticket Type
-                    </button>
-                    {errors.tickets && <p className="text-red-500 text-sm mt-1">{errors.tickets}</p>}
-                  </div>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addTicketType}
+                    className="text-[#4a2c8a] text-sm flex items-center gap-1 hover:text-[#6b4ba5]"
+                  >
+                    <FaTicketAlt /> Add Ticket Type
+                  </button>
+                  {errors.tickets && <p className="text-red-500 text-sm mt-1">{errors.tickets}</p>}
                 </div>
               </div>
             )}
 
+            {/* Step 3: Final Details */}
             {currentStep === 3 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
@@ -309,10 +453,12 @@ export const EventForm = () => {
                       I agree to the terms and conditions and confirm all event details are accurate
                     </label>
                   </div>
+                  {errors.termsAccepted && <p className="text-red-500 text-sm">{errors.termsAccepted}</p>}
                 </div>
               </div>
             )}
 
+            {/* Navigation Buttons */}
             <div className="flex justify-between mt-8">
               <button
                 type="button"
@@ -335,15 +481,19 @@ export const EventForm = () => {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="bg-green-500 text-white px-6 py-2 rounded-lg hover:bg-green-600 transition-colors"
-                  disabled={!formData.termsAccepted}
+                  disabled={isSubmitting || !formData.termsAccepted}
+                  className={`bg-green-500 text-white px-6 py-2 rounded-lg transition-colors ${isSubmitting || !formData.termsAccepted ? 'opacity-50 cursor-not-allowed' : 'hover:bg-green-600'}`}
                 >
-                  Publish Event
+                  {isSubmitting ? 'Publishing Event...' : 'Publish Event'}
                 </button>
               )}
             </div>
+
+            {/* Error Message */}
+            {errors.submit && <p className="text-red-500 text-center mt-4">{errors.submit}</p>}
           </div>
 
+          {/* Success Modal */}
           {isSubmitted && (
             <div className="absolute inset-0 flex items-center justify-center z-50">
               <div className="bg-white rounded-xl shadow-2xl p-8 text-center space-y-6 w-full max-w-md animate-fade-in">

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaCheck, FaEnvelope, FaInfoCircle, FaPhone, FaMapMarker, FaGlobe, FaBuilding, FaImage, FaUserPlus, FaCog } from 'react-icons/fa';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
 import { Navbar } from './Navbar';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const initialFormData = {
   email: '',
@@ -25,25 +26,40 @@ const organizationTypes = ['Club', 'Enterprise', 'Non-Profit', 'Government', 'Ed
 const eventCategories = ['Conference', 'Workshop', 'Concert', 'Sports', 'Exhibition', 'Networking'];
 
 export const OrganizerForm = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState(initialFormData);
   const [errors, setErrors] = useState({});
+  const [authError, setAuthError] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setAuthError('Please log in to access this page.');
+      localStorage.setItem('redirectAfterLogin', location.pathname);
+      const redirectPath = `/login?redirect=${encodeURIComponent(location.pathname)}`;
+      console.log("OrganizerForm - Redirecting to:", redirectPath);
+      navigate(redirectPath, { replace: true });
+    }
+  }, [navigate, location.pathname]);
 
   const validateStep = (step) => {
     const newErrors = {};
     
-    if(step === 1) {
-      if(!formData.email) newErrors.email = 'Email is required';
-      if(!formData.phone) newErrors.phone = 'Phone is required';
-      if(!formData.address) newErrors.address = 'Address is required';
+    if (step === 1) {
+      if (!formData.email) newErrors.email = 'Email is required';
+      if (!formData.phone) newErrors.phone = 'Phone is required';
+      if (!formData.address) newErrors.address = 'Address is required';
     }
     
-    if(step === 2) {
-      if(!formData.orgName) newErrors.orgName = 'Organization name is required';
-      if(!formData.orgType) newErrors.orgType = 'Organization type is required';
-      if(!formData.eventTypes.length) newErrors.eventTypes = 'Select at least one event type';
-      if(!formData.orgImage) newErrors.orgImage = 'Image is required';
+    if (step === 2) {
+      if (!formData.orgName) newErrors.orgName = 'Organization name is required';
+      if (!formData.orgType) newErrors.orgType = 'Organization type is required';
+      if (!formData.eventTypes.length) newErrors.eventTypes = 'Select at least one event type';
+      if (!formData.orgImage) newErrors.orgImage = 'Image is required';
     }
     
     setErrors(newErrors);
@@ -51,7 +67,7 @@ export const OrganizerForm = () => {
   };
 
   const handleNext = () => {
-    if(validateStep(currentStep)) {
+    if (validateStep(currentStep)) {
       setCurrentStep(prev => Math.min(prev + 1, 3));
     }
   };
@@ -67,8 +83,8 @@ export const OrganizerForm = () => {
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
-    if(file) {
-      setFormData(prev => ({ ...prev, orgImage: URL.createObjectURL(file) }));
+    if (file) {
+      setFormData(prev => ({ ...prev, orgImage: file }));
     }
   };
 
@@ -82,16 +98,62 @@ export const OrganizerForm = () => {
     setFormData(prev => ({ ...prev, admins: [...prev.admins, ''] }));
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    setIsSubmitted(true);
+  const handleSubmit = async () => {
+    if (!validateStep(3)) return;
+
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setAuthError('Please log in to submit the request.');
+      localStorage.setItem('redirectAfterLogin', location.pathname);
+      const redirectPath = `/login?redirect=${encodeURIComponent(location.pathname)}`;
+      console.log("OrganizerForm - Redirecting to:", redirectPath);
+      navigate(redirectPath, { replace: true });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    const formDataToSend = new FormData();
+    formDataToSend.append('category', formData.eventTypes.join(','));
+    formDataToSend.append('description', '');
+    formDataToSend.append('organization_type', formData.orgType);
+    formDataToSend.append('organization_name', formData.orgName);
+    if (formData.orgImage) formDataToSend.append('logo', formData.orgImage);
+    formDataToSend.append('document', '');
+
+    try {
+      const response = await fetch('/api/organizers/request', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formDataToSend,
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to submit request');
+      }
+
+      setIsSubmitted(true);
+    } catch (error) {
+      setErrors({ submit: error.message });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleReset = () => {
     setIsSubmitted(false);
     setCurrentStep(1);
     setFormData(initialFormData);
+    setErrors({});
+    setAuthError(null);
   };
+
+  if (authError) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
@@ -102,7 +164,6 @@ export const OrganizerForm = () => {
         { text: "Username", href: "#", className: "underline-effect" },
       ]} />
       <div className="max-w-3xl mx-auto px-4 relative pt-16">
-        {/* Title & Subtitle */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white mb-2">
             Be Part of EventSphere Family!!
@@ -112,30 +173,34 @@ export const OrganizerForm = () => {
           </p>
         </div>
 
-        {/* Progress Steps */}
         <div className="flex items-center justify-between mb-12">
-          {steps.map((step, index) => (
-            <div key={index} className="flex flex-col items-center flex-1">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center 
-                ${currentStep > index + 1  ? 'bg-green-500' : currentStep === index + 1 ? 'bg-[#c4adf4]' : 'bg-gray-300'}
-                transition-colors duration-300`}>
-                {currentStep > index + 1 ? <FaCheck className="text-white" /> : 
-                 React.cloneElement(step.icon, { className: 'text-white' })}
+          {steps.map((step, index) => {
+            const stepNumber = index + 1;
+            const isCompleted = !isSubmitted && currentStep > stepNumber;
+            const isActive = !isSubmitted && currentStep === stepNumber;
+            const isLastStep = stepNumber === steps.length;
+
+            return (
+              <div key={index} className="flex flex-col items-center flex-1">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center 
+                  ${isCompleted ? 'bg-green-500' : isActive ? 'bg-[#c4adf4]' : 'bg-gray-300'}
+                  transition-colors duration-300`}>
+                  {isCompleted ? <FaCheck className="text-white" /> : 
+                   React.cloneElement(step.icon, { className: 'text-white' })}
+                </div>
+                <span className={`mt-2 text-sm ${isCompleted || isActive ? 'text-white' : 'text-gray-400'}`}>
+                  {step.title}
+                </span>
+                {index < steps.length - 1 && (
+                  <div className={`flex-1 h-1 mt-6 ${!isSubmitted && currentStep > stepNumber + 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                )}
               </div>
-              <span className={`mt-2 text-sm ${currentStep >= index + 1 ? 'text-white' : 'text-gray-400'}`}>
-                {step.title}
-              </span>
-              {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mt-6 ${currentStep > index + 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Form Container */}
         <div className="relative">
           <div className={`bg-white rounded-lg shadow-lg p-8 transition-opacity ${isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
-            {/* Form Steps */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
@@ -261,7 +326,7 @@ export const OrganizerForm = () => {
                       />
                     </div>
                     {formData.orgImage && (
-                      <img src={formData.orgImage} alt="Organization Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
+                      <img src={URL.createObjectURL(formData.orgImage)} alt="Organization Preview" className="mt-2 w-32 h-32 object-cover rounded-lg" />
                     )}
                     {errors.orgImage && <p className="text-red-500 text-sm">{errors.orgImage}</p>}
                   </div>
@@ -298,7 +363,6 @@ export const OrganizerForm = () => {
               </div>
             )}
 
-            {/* Navigation Buttons */}
             <div className="flex justify-between mt-8">
               <button
                 type="button"
@@ -320,15 +384,15 @@ export const OrganizerForm = () => {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="bg-purple-700 text-white px-4 py-2 rounded-lg"
+                  disabled={isSubmitting}
+                  className={`bg-purple-700 text-white px-4 py-2 rounded-lg ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  Complete Setup
+                  {isSubmitting ? 'Creating your organization...' : 'Complete Setup'}
                 </button>
               )}
             </div>
           </div>
 
-          {/* Congratulations Overlay */}
           {isSubmitted && (
             <div className="absolute inset-0 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg shadow-xl p-8 text-center space-y-6 w-full max-w-md transform transition-all">
@@ -350,6 +414,7 @@ export const OrganizerForm = () => {
               </div>
             </div>
           )}
+          {errors.submit && <p className="text-red-500 text-center mt-4">{errors.submit}</p>}
         </div>
       </div>
     </div>

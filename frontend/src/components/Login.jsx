@@ -14,7 +14,6 @@ export const Login = () => {
     const [isFormValid, setIsFormValid] = useState(false);
     const [loginError, setLoginError] = useState("");
 
-    // Handle verification redirect parameters
     useEffect(() => {
         const verificationError = searchParams.get('verification_error');
         const verificationSuccess = searchParams.get('verification');
@@ -30,6 +29,11 @@ export const Login = () => {
         if (verificationSuccess === 'success') {
             setLoginError('Email verified successfully! Please login');
         }
+
+        const redirectFromQuery = searchParams.get('redirect');
+        console.log("Login - Redirect parameter from query:", redirectFromQuery);
+        const redirectFromStorage = localStorage.getItem('redirectAfterLogin');
+        console.log("Login - Redirect parameter from localStorage:", redirectFromStorage);
     }, [searchParams]);
 
     useEffect(() => {
@@ -61,10 +65,15 @@ export const Login = () => {
                 password
             });
 
-            if (response.data.access_token) {
-                localStorage.setItem('token', response.data.access_token);
-                navigate('/profile');
-            }
+        if (response.data.access_token) {
+            localStorage.setItem('token', response.data.access_token);
+            const redirectFromQuery = searchParams.get('redirect');
+            const redirectFromStorage = localStorage.getItem('redirectAfterLogin');
+            const redirectPath = redirectFromStorage || redirectFromQuery || '/profile';
+            console.log("Login - Final redirect path:", redirectPath);
+            localStorage.removeItem('redirectAfterLogin'); // Clean up
+            navigate(redirectPath, { replace: true });
+        }
         } catch (error) {
             if (error.response) {
                 const { status, data } = error.response;
@@ -100,7 +109,6 @@ export const Login = () => {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-3">
-                    {/* Email Input */}
                     <div>
                         <label className="block text-gray-300 text-sm mb-2">Email</label>
                         <input
@@ -115,7 +123,6 @@ export const Login = () => {
                         {emailError && <p className="text-red-400 text-sm mt-1">{emailError}</p>}
                     </div>
 
-                    {/* Password Input */}
                     <div>
                         <label className="block text-gray-300 text-sm mb-2">Password</label>
                         <input
@@ -130,7 +137,6 @@ export const Login = () => {
                         {passwordError && <p className="text-red-400 text-sm mt-1">{passwordError}</p>}
                     </div>
 
-                    {/* Remember Me & Forgot Password */}
                     <div className="flex justify-between items-center">
                         <label className="flex items-center text-gray-300 space-x-2">
                             <input 
@@ -144,7 +150,6 @@ export const Login = () => {
                         </a>
                     </div>
 
-                    {/* Login Button */}
                     <button
                         type="submit"
                         disabled={!isFormValid}
@@ -157,7 +162,6 @@ export const Login = () => {
                         Sign In
                     </button>
 
-                    {/* Social Login */}
                     <div className="relative my-4 flex items-center">
                         <div className="flex-grow border-t border-gray-500"></div>
                         <div className="mx-4 text-gray-300 text-sm">Or continue with</div>
@@ -176,7 +180,6 @@ export const Login = () => {
                         </button>
                     </div>
 
-                    {/* Sign Up Link */}
                     <p className="text-center text-gray-400 text-sm">
                         Don't have an account?{" "}
                         <a href="/register" className="text-purple-300 hover:text-purple-200">
