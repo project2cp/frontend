@@ -18,6 +18,11 @@ export default defineConfig({
         target: API_BASE_URL,
         changeOrigin: true,
         secure: false,
+      },
+      '/storage': {  
+      target: API_BASE_URL,
+      changeOrigin: true,
+      secure: false,
       }
     }
   }

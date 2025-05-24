@@ -5,19 +5,19 @@ import { Navbar } from './Navbar';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 const initialEventData = {
-  eventName: '',
-  eventType: '',
+  title: '',
+  category: '',
   date: '',
   time: '',
   description: '',
   location: '',
-  tickets: [],
+  ticketPrice: '',
+  ticketLimit: '',
   eventImage: null,
   termsAccepted: false,
 };
 
 const eventTypes = ['Conference', 'Concert', 'Workshop', 'Exhibition', 'Networking'];
-const ticketTypes = ['General Admission', 'VIP', 'Early Bird', 'Student'];
 
 export const EventForm = () => {
   const navigate = useNavigate();
@@ -29,7 +29,6 @@ export const EventForm = () => {
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState(null);
 
-  // Authentication and organizer verification
   useEffect(() => {
     const verifyOrganizerStatus = async () => {
       const token = localStorage.getItem('token');
@@ -68,37 +67,28 @@ export const EventForm = () => {
     navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
   };
 
-  // Form validation
   const validateStep = (step) => {
     const newErrors = {};
     
-    // Step 1 Validation
     if (step === 1) {
-      if (!formData.eventName.trim()) newErrors.eventName = 'Event name is required';
-      if (!formData.eventType) newErrors.eventType = 'Event type is required';
+      if (!formData.title.trim()) newErrors.title = 'Event name is required';
+      if (!formData.category) newErrors.category = 'Event type is required';
       if (!formData.date) newErrors.date = 'Date is required';
       if (!formData.time) newErrors.time = 'Time is required';
     }
     
-    // Step 2 Validation
     if (step === 2) {
       if (!formData.description.trim()) newErrors.description = 'Description is required';
       if (!formData.location.trim()) newErrors.location = 'Location is required';
       if (!formData.eventImage) newErrors.eventImage = 'Event image is required';
-      
-      // Ticket validation
-      if (formData.tickets.length === 0) {
-        newErrors.tickets = 'At least one ticket type is required';
-      } else {
-        formData.tickets.forEach((ticket, index) => {
-          if (!ticket.type) newErrors[`ticketType${index}`] = `Ticket type ${index + 1} is required`;
-          if (!ticket.price || ticket.price <= 0) newErrors[`ticketPrice${index}`] = `Valid price required for ticket ${index + 1}`;
-          if (!ticket.quantity || ticket.quantity <= 0) newErrors[`ticketQuantity${index}`] = `Valid quantity required for ticket ${index + 1}`;
-        });
+      if (!formData.ticketLimit || parseInt(formData.ticketLimit) <= 0) {
+        newErrors.ticketLimit = 'A valid ticket limit is required';
+      }
+      if (formData.ticketPrice && parseFloat(formData.ticketPrice) <= 0) {
+        newErrors.ticketPrice = 'Ticket price must be a positive number if provided';
       }
     }
     
-    // Step 3 Validation
     if (step === 3 && !formData.termsAccepted) {
       newErrors.termsAccepted = 'You must agree to the terms and conditions';
     }
@@ -107,11 +97,9 @@ export const EventForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Form navigation
   const handleNext = () => validateStep(currentStep) && setCurrentStep(prev => Math.min(prev + 1, 3));
   const handlePrevious = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
-  // Form handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -130,42 +118,28 @@ export const EventForm = () => {
     }
   };
 
-  const handleTicketChange = (index, field, value) => {
-    const newTickets = [...formData.tickets];
-    newTickets[index] = { ...newTickets[index], [field]: value };
-    setFormData(prev => ({ ...prev, tickets: newTickets }));
-    setErrors(prev => ({ 
-      ...prev, 
-      [`ticketType${index}`]: '',
-      [`ticketPrice${index}`]: '',
-      [`ticketQuantity${index}`]: '' 
-    }));
-  };
-
-  const addTicketType = () => {
-    setFormData(prev => ({
-      ...prev,
-      tickets: [...prev.tickets, { type: '', price: '', quantity: '' }]
-    }));
-  };
-
-  // Form submission
   const handleSubmit = async () => {
     if (!validateStep(3)) return;
     setIsSubmitting(true);
 
     const formDataToSend = new FormData();
-    formDataToSend.append('name', formData.eventName);
-    formDataToSend.append('type', formData.eventType);
-    formDataToSend.append('date', formData.date);
-    formDataToSend.append('time', formData.time);
+    const combinedDateTime = `${formData.date}T${formData.time}:00`;
+    formDataToSend.append('title', formData.title);
+    formDataToSend.append('category', formData.category);
+    formDataToSend.append('date', combinedDateTime);
     formDataToSend.append('description', formData.description);
     formDataToSend.append('location', formData.location);
     formDataToSend.append('image', formData.eventImage);
-    formDataToSend.append('tickets', JSON.stringify(formData.tickets));
+    formDataToSend.append('ticket_limit', formData.ticketLimit);
+    formDataToSend.append('is_paid', formData.ticketPrice ? '1' : '0');
+    if (formData.ticketPrice) {
+      formDataToSend.append('ticket_price', formData.ticketPrice);
+    }
+
+    console.log('Sending data:', Object.fromEntries(formDataToSend.entries()), { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } });
 
     try {
-      const response = await fetch('/api/organizers/event', {
+      const response = await fetch('/api/events', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,
@@ -173,19 +147,16 @@ export const EventForm = () => {
         body: formDataToSend,
       });
 
-      const contentType = response.headers.get('content-type');
-      
       if (!response.ok) {
-        const errorData = contentType?.includes('application/json')
-          ? await response.json()
-          : { message: `HTTP error! status: ${response.status}` };
+        const text = await response.text();
+        console.error('Server response:', text);
+        const errorData = response.status === 422 ? await response.json() : { message: `HTTP error! status: ${response.status}, ${text}` };
         throw new Error(errorData.message || 'Event creation failed');
       }
 
       const data = await response.json();
       setIsSubmitted(true);
       console.log('Event created successfully:', data);
-
     } catch (error) {
       setErrors({ submit: error.message });
       console.error('Event creation error:', error);
@@ -194,7 +165,6 @@ export const EventForm = () => {
     }
   };
 
-  // Reset form
   const handleReset = () => {
     setIsSubmitted(false);
     setCurrentStep(1);
@@ -203,10 +173,9 @@ export const EventForm = () => {
   };
 
   if (authError) {
-    return null; // Redirection handled in useEffect
+    return null;
   }
 
-  // Steps configuration
   const steps = [
     { title: 'Event Basics', icon: <FaInfoCircle /> },
     { title: 'Event Details', icon: <FaMapMarker /> },
@@ -216,10 +185,7 @@ export const EventForm = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
       <Navbar navItems={[
-        { text: 'Home', href: '/', className: "underline-effect" },
-        { text: "Favorite", href: "/favorite-events", className: "underline-effect" },
         { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
-        { text: "Username", href: "#", className: "underline-effect" },
       ]} />
 
       <div className="max-w-3xl mx-auto px-4 relative pt-16">
@@ -228,56 +194,50 @@ export const EventForm = () => {
           <p className="text-white/80">Bring your vision to life with our seamless event setup</p>
         </div>
 
-        {/* Progress Steps */}
         <div className="flex items-center justify-between mb-12">
           {steps.map((step, index) => (
             <div key={index} className="flex flex-col items-center flex-1">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center 
-                ${currentStep > index + 1 ? 'bg-green-500' : currentStep === index + 1 ? 'bg-[#c4adf4]' : 'bg-gray-300'}
+                ${(currentStep > index + 1 || (index === 2 && isSubmitted)) ? 'bg-green-500' : currentStep === index + 1 ? 'bg-[#c4adf4]' : 'bg-gray-300'}
                 transition-colors duration-300`}>
-                {currentStep > index + 1 ? <FaCheck className="text-white" /> : 
+                {(currentStep > index + 1 || (index === 2 && isSubmitted)) ? <FaCheck className="text-white" /> : 
                  React.cloneElement(step.icon, { className: 'text-white' })}
               </div>
-              <span className={`mt-2 text-sm ${currentStep >= index + 1 ? 'text-white' : 'text-gray-400'}`}>
+              <span className={`mt-2 text-sm ${(currentStep >= index + 1 || (index === 2 && isSubmitted)) ? 'text-white' : 'text-gray-400'}`}>
                 {step.title}
               </span>
               {index < steps.length - 1 && (
-                <div className={`flex-1 h-1 mt-6 ${currentStep > index + 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                <div className={`flex-1 h-1 mt-6 ${(currentStep > index + 1 || (index === 1 && isSubmitted)) ? 'bg-green-500' : 'bg-gray-200'}`} />
               )}
             </div>
           ))}
         </div>
 
-        {/* Form Content */}
         <div className="relative">
           <div className={`bg-white rounded-xl shadow-lg p-8 transition-opacity ${isSubmitted ? 'opacity-50 pointer-events-none' : ''}`}>
             
-            {/* Step 1: Event Basics */}
             {currentStep === 1 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
                   <FaInfoCircle className="text-[#c4adf4]" /> Event Basics
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Event Name */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Event Name *</label>
                     <input
-                      name="eventName"
-                      value={formData.eventName}
+                      name="title"
+                      value={formData.title}
                       onChange={handleInputChange}
                       placeholder="Enter event name"
                       className="w-full p-3 border rounded-lg placeholder-gray-400 focus:ring-2 focus:ring-[#c4adf4]"
                     />
-                    {errors.eventName && <p className="text-red-500 text-sm mt-1">{errors.eventName}</p>}
+                    {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title}</p>}
                   </div>
-
-                  {/* Event Type */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Event Type *</label>
                     <select
-                      name="eventType"
-                      value={formData.eventType}
+                      name="category"
+                      value={formData.category}
                       onChange={handleInputChange}
                       className="w-full p-3 border rounded-lg text-gray-700"
                     >
@@ -286,10 +246,8 @@ export const EventForm = () => {
                         <option key={type} value={type}>{type}</option>
                       ))}
                     </select>
-                    {errors.eventType && <p className="text-red-500 text-sm mt-1">{errors.eventType}</p>}
+                    {errors.category && <p className="text-red-500 text-sm mt-1">{errors.category}</p>}
                   </div>
-
-                  {/* Date */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Date *</label>
                     <div className="flex items-center gap-2">
@@ -304,8 +262,6 @@ export const EventForm = () => {
                     </div>
                     {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
                   </div>
-
-                  {/* Time */}
                   <div>
                     <label className="block text-sm font-medium mb-2">Time *</label>
                     <div className="flex items-center gap-2">
@@ -324,14 +280,11 @@ export const EventForm = () => {
               </div>
             )}
 
-            {/* Step 2: Event Details */}
             {currentStep === 2 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
                   <FaMapMarker className="text-[#c4adf4]" /> Event Details
                 </h2>
-                
-                {/* Description */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Description *</label>
                   <div className="flex items-start gap-2">
@@ -347,8 +300,6 @@ export const EventForm = () => {
                   </div>
                   {errors.description && <p className="text-red-500 text-sm mt-1">{errors.description}</p>}
                 </div>
-
-                {/* Location */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Location *</label>
                   <div className="flex items-center gap-2">
@@ -363,8 +314,6 @@ export const EventForm = () => {
                   </div>
                   {errors.location && <p className="text-red-500 text-sm mt-1">{errors.location}</p>}
                 </div>
-
-                {/* Event Image */}
                 <div>
                   <label className="block text-sm font-medium mb-2">Event Image *</label>
                   <div className="flex items-center gap-2">
@@ -381,60 +330,38 @@ export const EventForm = () => {
                   )}
                   {errors.eventImage && <p className="text-red-500 text-sm mt-1">{errors.eventImage}</p>}
                 </div>
-
-                {/* Tickets */}
                 <div>
-                  <label className="block text-sm font-medium mb-2">Ticket Types *</label>
-                  {formData.tickets.map((ticket, index) => (
-                    <div key={index} className="grid grid-cols-3 gap-4 mb-4">
-                      <div>
-                        <select
-                          value={ticket.type}
-                          onChange={(e) => handleTicketChange(index, 'type', e.target.value)}
-                          className="p-2 border rounded-lg w-full"
-                        >
-                          <option value="" disabled>Select ticket type</option>
-                          {ticketTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
-                          ))}
-                        </select>
-                        {errors[`ticketType${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketType${index}`]}</p>}
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          placeholder="Price"
-                          value={ticket.price}
-                          onChange={(e) => handleTicketChange(index, 'price', e.target.value)}
-                          className="p-2 border rounded-lg placeholder-gray-400 w-full"
-                        />
-                        {errors[`ticketPrice${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketPrice${index}`]}</p>}
-                      </div>
-                      <div>
-                        <input
-                          type="number"
-                          placeholder="Quantity"
-                          value={ticket.quantity}
-                          onChange={(e) => handleTicketChange(index, 'quantity', e.target.value)}
-                          className="p-2 border rounded-lg placeholder-gray-400 w-full"
-                        />
-                        {errors[`ticketQuantity${index}`] && <p className="text-red-500 text-sm mt-1">{errors[`ticketQuantity${index}`]}</p>}
-                      </div>
+                  <label className="block text-sm font-medium mb-2">Ticket Options *</label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Ticket Price (Leave empty for free event)</label>
+                      <input
+                        type="number"
+                        name="ticketPrice"
+                        value={formData.ticketPrice}
+                        onChange={handleInputChange}
+                        placeholder="Enter ticket price (optional)"
+                        className="w-full p-3 border rounded-lg placeholder-gray-400"
+                      />
+                      {errors.ticketPrice && <p className="text-red-500 text-sm mt-1">{errors.ticketPrice}</p>}
                     </div>
-                  ))}
-                  <button
-                    type="button"
-                    onClick={addTicketType}
-                    className="text-[#4a2c8a] text-sm flex items-center gap-1 hover:text-[#6b4ba5]"
-                  >
-                    <FaTicketAlt /> Add Ticket Type
-                  </button>
-                  {errors.tickets && <p className="text-red-500 text-sm mt-1">{errors.tickets}</p>}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Ticket Limit *</label>
+                      <input
+                        type="number"
+                        name="ticketLimit"
+                        value={formData.ticketLimit}
+                        onChange={handleInputChange}
+                        placeholder="Enter ticket limit"
+                        className="w-full p-3 border rounded-lg placeholder-gray-400"
+                      />
+                      {errors.ticketLimit && <p className="text-red-500 text-sm mt-1">{errors.ticketLimit}</p>}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Step 3: Final Details */}
             {currentStep === 3 && (
               <div className="space-y-6">
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2 text-[#4a2c8a]">
@@ -445,12 +372,14 @@ export const EventForm = () => {
                     <input
                       type="checkbox"
                       id="terms"
+                      name="termsAccepted"
                       checked={formData.termsAccepted}
                       onChange={(e) => setFormData(prev => ({ ...prev, termsAccepted: e.target.checked }))}
                       className="w-5 h-5 accent-[#4a2c8a]"
+                      required
                     />
                     <label htmlFor="terms" className="text-sm text-gray-700">
-                      I agree to the terms and conditions and confirm all event details are accurate
+                      I agree to the terms and conditions and confirm all event details are accurate *
                     </label>
                   </div>
                   {errors.termsAccepted && <p className="text-red-500 text-sm">{errors.termsAccepted}</p>}
@@ -458,7 +387,6 @@ export const EventForm = () => {
               </div>
             )}
 
-            {/* Navigation Buttons */}
             <div className="flex justify-between mt-8">
               <button
                 type="button"
@@ -489,11 +417,9 @@ export const EventForm = () => {
               )}
             </div>
 
-            {/* Error Message */}
             {errors.submit && <p className="text-red-500 text-center mt-4">{errors.submit}</p>}
           </div>
 
-          {/* Success Modal */}
           {isSubmitted && (
             <div className="absolute inset-0 flex items-center justify-center z-50">
               <div className="bg-white rounded-xl shadow-2xl p-8 text-center space-y-6 w-full max-w-md animate-fade-in">

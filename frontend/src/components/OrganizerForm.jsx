@@ -158,10 +158,7 @@ export const OrganizerForm = () => {
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
       <Navbar navItems={[
-        { text: 'Home', href: '/', className: "underline-effect" },
-        { text: "Favorite", href: "/favorite-events", className: "underline-effect" },
         { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
-        { text: "Username", href: "#", className: "underline-effect" },
       ]} />
       <div className="max-w-3xl mx-auto px-4 relative pt-16">
         <div className="text-center mb-8">
@@ -176,23 +173,23 @@ export const OrganizerForm = () => {
         <div className="flex items-center justify-between mb-12">
           {steps.map((step, index) => {
             const stepNumber = index + 1;
-            const isCompleted = !isSubmitted && currentStep > stepNumber;
-            const isActive = !isSubmitted && currentStep === stepNumber;
+            const isCompleted = currentStep > stepNumber || (index === 2 && isSubmitted);
+            const isActive = currentStep === stepNumber && !isSubmitted;
             const isLastStep = stepNumber === steps.length;
 
             return (
               <div key={index} className="flex flex-col items-center flex-1">
                 <div className={`w-12 h-12 rounded-full flex items-center justify-center 
-                  ${isCompleted ? 'bg-green-500' : isActive ? 'bg-[#c4adf4]' : 'bg-gray-300'}
+                  ${(currentStep > index + 1 || (index === 2 && isSubmitted)) ? 'bg-green-500' : (currentStep === index + 1 && !isSubmitted) ? 'bg-[#c4adf4]' : 'bg-gray-300'}
                   transition-colors duration-300`}>
-                  {isCompleted ? <FaCheck className="text-white" /> : 
+                  {(currentStep > index + 1 || (index === 2 && isSubmitted)) ? <FaCheck className="text-white" /> : 
                    React.cloneElement(step.icon, { className: 'text-white' })}
                 </div>
-                <span className={`mt-2 text-sm ${isCompleted || isActive ? 'text-white' : 'text-gray-400'}`}>
+                <span className={`mt-2 text-sm ${(currentStep > index + 1 || (index === 2 && isSubmitted) || (currentStep === index + 1 && !isSubmitted)) ? 'text-white' : 'text-gray-400'}`}>
                   {step.title}
                 </span>
                 {index < steps.length - 1 && (
-                  <div className={`flex-1 h-1 mt-6 ${!isSubmitted && currentStep > stepNumber + 1 ? 'bg-green-500' : 'bg-gray-200'}`} />
+                  <div className={`flex-1 h-1 mt-6 ${(currentStep > index + 1 || (index === 1 && isSubmitted)) ? 'bg-green-500' : 'bg-gray-200'}`} />
                 )}
               </div>
             );

@@ -43,12 +43,12 @@ export const Navbar = ({ navItems = [] }) => {
               {/* Profile Photo */}
               <div 
                 className="w-9 h-9 rounded-full bg-purple-500 cursor-pointer 
-                         flex items-center justify-center overflow-hidden border-2 border-white"
+                         flex items-center justify-center overflow-hidden border-1 border-white"
                 onClick={() => navigate("/profile")}
               >
                 {userData?.profile_photo ? (
                   <img 
-                    src={`${API_BASE_URL}/storage/${userData.profile_photo}`}
+                    src={`/storage/${userData.profile_photo}`}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />

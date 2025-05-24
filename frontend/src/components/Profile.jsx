@@ -23,7 +23,7 @@ export const Profile = () => {
   const [authError, setAuthError] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
@@ -86,17 +86,27 @@ export const Profile = () => {
         }
 
         const data = await response.json();
+        // Normalize the profile_photo path
+        const profilePhotoPath = data.profile_photo
+          ? data.profile_photo.startsWith("storage/")
+            ? data.profile_photo
+            : `storage/${data.profile_photo}`
+          : null;
+
         setUserData({
           ...data,
           phone_number: data.phone_number || "",
           location: data.location || "",
           bio: data.bio || "",
-          profile_photo: data.profile_photo 
-          ? `${API_BASE_URL}/storage/${data.profile_photo}`
-          : null,
+          profile_photo: profilePhotoPath ? `${API_BASE_URL}/${profilePhotoPath}` : null,
           notificationEnabled: data.notificationEnabled ?? true,
           payementMethode: data.payementMethode || [],
         });
+
+        // Log the constructed image URL for debugging
+        if (profilePhotoPath) {
+          console.log("Profile Image URL:", `${API_BASE_URL}/${profilePhotoPath}`);
+        }
       } catch (error) {
         setAuthError(error.message || "An error occurred while fetching profile.");
       } finally {
@@ -139,7 +149,6 @@ export const Profile = () => {
         method: "POST", // Use POST to match Postman test
         headers: {
           Authorization: `Bearer ${token}`,
-          // Do not set Content-Type; fetch will handle multipart/form-data automatically
         },
         body: formData,
       });
@@ -155,12 +164,21 @@ export const Profile = () => {
       }
 
       const data = await response.json();
+      const profilePhotoPath = data.user.profile_photo
+        ? data.user.profile_photo.startsWith("storage/")
+          ? data.user.profile_photo
+          : `storage/${data.user.profile_photo}`
+        : null;
+
       setUserData((prev) => ({
         ...prev,
-        profile_photo: data.user.profile_photo 
-          ? `${API_BASE_URL}/storage/${data.user.profile_photo}`
-          : null,
+        profile_photo: profilePhotoPath ? `${API_BASE_URL}/${profilePhotoPath}` : null,
       }));
+
+      // Log the updated image URL for debugging
+      if (profilePhotoPath) {
+        console.log("Updated Profile Image URL:", `${API_BASE_URL}/${profilePhotoPath}`);
+      }
     } catch (error) {
       setAuthError(error.message || "An error occurred while uploading the photo.");
       setUserData((prev) => ({ ...prev, profile_photo: null }));
@@ -532,15 +550,23 @@ export const Profile = () => {
             <div className="w-[200px] h-[200px] mx-auto bg-gray-700 rounded-full overflow-hidden">
               {userData.profile_photo ? (
                 <img
-                  src={`${API_BASE_URL}/storage/${userData.profile_photo}`}
+                  src={userData.profile_photo}
                   alt="Profile"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    console.error("Failed to load image:", userData.profile_photo);
+                    e.target.style.display = "none"; // Hide the broken image
+                    e.target.nextSibling.style.display = "flex"; // Show the fallback
+                  }}
                 />
-              ) : (
-                <div className="w-full h-full bg-purple-500 flex items-center justify-center text-2xl">
-                  {userData.name[0]?.toUpperCase() || "U"}
-                </div>
-              )}
+              ) : null}
+              <div
+                className={`w-full h-full bg-purple-500 flex items-center justify-center text-2xl ${
+                  userData.profile_photo ? "hidden" : "flex"
+                }`}
+              >
+                {userData.name[0]?.toUpperCase() || "U"}
+              </div>
             </div>
             <label className="bg-blue-500 px-4 py-2 mt-4 rounded hover:bg-blue-600 cursor-pointer inline-block">
               Upload new photo
@@ -577,7 +603,7 @@ export const Profile = () => {
               </text>
             </svg>
             <h3 className="text-lg font-semibold">Complete your profile</h3>
-            <ul className="space-y-2 text-gray-400 text-sm">
+            <ul className="space-y-2 text-gray-300 text-sm">
               {completionSteps.map((step, index) => (
                 <li key={index} className="flex items-center gap-2">
                   {step.completed ? (
@@ -591,7 +617,7 @@ export const Profile = () => {
                 </li>
               ))}
             </ul>
-            <a href="/signup" className="block mt-[50px] w-full">
+            <a href="/organizer" className="block mt-[50px] w-full">
               <button className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-full">
                 Be an organizer
               </button>
