@@ -50,7 +50,7 @@ export const Navbar = ({ navItems = [] }) => {
     ? [
         {
           element: (
-            <li className="flex items-center gap-4">
+            <li className="flex items-center gap-2">
               <div 
                 className="w-9 h-9 rounded-full bg-purple-500 cursor-pointer 
                          flex items-center justify-center overflow-hidden border-1 border-white"

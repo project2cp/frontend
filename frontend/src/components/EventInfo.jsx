@@ -90,10 +90,11 @@ export const EventInfo = () => {
         throw new Error(errorData.message || 'Registration failed');
       }
 
-      // Update local ticket count
+      // Use the updated event data from the response
+      const updatedEventData = await response.json();
       setEventData(prev => ({
         ...prev,
-        tickets_count: prev.tickets_count + 1
+        ...updatedEventData // Merge the updated data from the backend
       }));
 
       setShowSuccess(true);
@@ -120,7 +121,7 @@ export const EventInfo = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] px-8">
-      <Navbar navItems={navItems} />
+      <Navbar  />
       
       {/* Success Notification */}
       {showSuccess && (

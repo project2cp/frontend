@@ -9,40 +9,42 @@ export const MyTickets = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const navItems = [
-    { text: "Discover Events", href: "/events", className: "underline-effect" },
-  ];
-
   const token = localStorage.getItem('token');
   const headers = {
     'Authorization': `Bearer ${token}`,
     'Accept': 'application/json'
   };
 
-  useEffect(() => {
-    const fetchTickets = async () => {
-      try {
-        const response = await fetch('/api/tickets', { headers });
-        
-        if (!response.ok) {
-          if (response.status === 401) {
-            localStorage.removeItem('token');
-            navigate('/login');
-            return;
-          }
-          throw new Error('Failed to fetch tickets');
+  const fetchTickets = async () => {
+    try {
+      const response = await fetch('/api/tickets', { headers });
+      
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          navigate('/login');
+          return;
         }
-
-        const data = await response.json();
-        setTickets(data.tickets);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+        throw new Error('Failed to fetch tickets');
       }
-    };
 
+      const data = await response.json();
+      setTickets(data.tickets);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchTickets();
+
+    // Set up polling every 10 seconds to check for updates
+    const intervalId = setInterval(fetchTickets, 10000);
+
+    // Cleanup interval on component unmount
+    return () => clearInterval(intervalId);
   }, [navigate]);
 
   const isTicketValid = (eventDate) => {
@@ -65,7 +67,7 @@ export const MyTickets = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] px-8">
-      <Navbar navItems={navItems} />
+      <Navbar />
       
       <div className="max-w-6xl mx-auto pl-8 pr-4 py-8 pt-20">
         <h1 className="text-4xl font-bold text-white mb-8">Your Tickets</h1>

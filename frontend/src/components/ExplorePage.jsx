@@ -167,9 +167,7 @@ export const ExplorePage = () => {
 
   return (
     <div className='min-h-screen bg-[var(--bg-purple)] text-white font-sans'>
-      <Navbar navItems={[
-        { text: "My Tickets", href: "/my-tickets" },
-      ]} />
+      <Navbar  />
 
       {/* Animated Header Section */}
       <div className='pt-16'>

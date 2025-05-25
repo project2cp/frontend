@@ -178,9 +178,7 @@ export const EventForm = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans py-8">
-      <Navbar navItems={[
-        { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
-      ]} />
+      <Navbar  />
 
       <div className="max-w-3xl mx-auto px-4 relative pt-16">
         <div className="text-center mb-8">

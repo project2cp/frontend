@@ -128,9 +128,7 @@ export const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans">
-      <Navbar navItems={[
-        { text: "My Tickets", href: "/my-tickets", icon: <FaTicketAlt /> },
-      ]} />
+      <Navbar  />
 
       <div className="p-8 pt-20">
         {/* Header Section */}

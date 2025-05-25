@@ -257,6 +257,7 @@ export const Signup = () => {
             }`}
           >
             {isLoading ? 'Creating Account...' : 'Sign Up'}
+            
           </button>
 
           <div className="relative my-4 flex items-center">
