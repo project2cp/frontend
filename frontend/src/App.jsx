@@ -13,6 +13,7 @@ import { ExplorePage } from "./components/ExplorePage";
 import { OrganizerForm  } from "./components/OrganizerForm";
 import { EventForm } from "./components/EevntForm";
 import { Dashboard } from "./components/Dashboard";
+import { MyTickets } from "./components/MyTickets";
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
         <Route path="/Organizer" element={<OrganizerForm />} />
         <Route path="/create-event" element={<EventForm/>}/>
         <Route path= "/dashboard" element= {<Dashboard/>}/>
+        <Route path= "/my-tickets" element= {<MyTickets/>} />
       </Routes>
     </Router>
   );

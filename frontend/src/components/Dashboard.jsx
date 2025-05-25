@@ -1,143 +1,242 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Navbar } from './Navbar';
-import { Sidebar } from './Sidebar';
 import { gsap } from 'gsap';
-import { FaCalendar, FaUser, FaChartLine, FaClock, FaPlus, FaHistory } from 'react-icons/fa';
-
-// Sample event data based on the image
-const eventsData = [
-  { title: 'Conférence mise à jour', date: '01/04/2025', location: 'Alger', ticketLimit: 50, registrations: 0, participationRate: '0%' },
-  { title: 'Conférence HTML', date: '01/04/2025', location: 'Alger', ticketLimit: 50, registrations: 0, participationRate: '0%' },
-  { title: 'Conférence Laravel', date: '01/04/2025', location: 'Alger', ticketLimit: 50, registrations: 0, participationRate: '0%' },
-  { title: 'Hack', date: '01/04/2025', location: 'Alger', ticketLimit: 50, registrations: 6, participationRate: '12%' },
-];
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'; // Added useNavigate and useLocation
+import { 
+  FaCalendar, 
+  FaUser, 
+  FaChartLine, 
+  FaClock, 
+  FaPlus, 
+  FaHistory, 
+  FaHome, 
+  FaStar,
+  FaTicketAlt,
+  FaUserCog,
+  FaCog
+} from 'react-icons/fa';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
 export const Dashboard = () => {
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [authError, setAuthError] = useState(null); // Added authError state
   const statsRef = useRef(null);
   const tableRef = useRef(null);
+  const navigate = useNavigate(); // Added useNavigate hook
+  const location = useLocation(); // Added useLocation hook
 
+  // Organizer verification logic
   useEffect(() => {
-    gsap.from(statsRef.current.children, {
-      duration: 1, // Increased for smoother animation
-      y: 50,
-      opacity: 0,
-      stagger: 0.2,
-      ease: "power2.out"
-    });
+    const verifyOrganizerStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        handleAuthRedirect();
+        return;
+      }
 
-    gsap.from(tableRef.current, {
-      duration: 1, // Increased for smoother animation
-      y: 50,
-      opacity: 0,
-      ease: "power2.out",
-      delay: 0.3
-    });
+      try {
+        const response = await fetch('/api/organizers/profile', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            navigate(`/organizer-form?redirect=${encodeURIComponent(location.pathname)}`, { 
+              replace: true,
+              state: { error: 'You need to be an organizer to create events' }
+            });
+          } else {
+            throw new Error('Failed to verify organizer status');
+          }
+        }
+      } catch (error) {
+        console.error('Organizer verification error:', error);
+        setAuthError('Error verifying organizer status. Please try again.');
+      }
+    };
+
+    verifyOrganizerStatus();
+  }, [navigate, location.pathname]);
+
+  const handleAuthRedirect = () => {
+    setAuthError('Please log in to create events');
+    localStorage.setItem('redirectAfterLogin', location.pathname);
+    navigate(`/login?redirect=${encodeURIComponent(location.pathname)}`, { replace: true });
+  };
+
+  // Existing data fetching useEffect
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/dashboard/summary', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+        
+        if (!response.ok) throw new Error('Failed to fetch dashboard data');
+        
+        const data = await response.json();
+        setDashboardData(data);
+        setLoading(false);
+
+        // Animations
+        gsap.from(statsRef.current.children, {
+          duration: 1,
+          y: 50,
+          opacity: 0,
+          stagger: 0.2,
+          ease: "power2.out"
+        });
+
+        gsap.from(tableRef.current, {
+          duration: 1,
+          y: 50,
+          opacity: 0,
+          ease: "power2.out",
+          delay: 0.3
+        });
+
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
+
+  const participationData = [
+    { name: 'Participated', value: dashboardData?.summary.avg_participation_rate || 0 },
+    { name: 'Remaining', value: 100 - (dashboardData?.summary.avg_participation_rate || 0) },
+  ];
+
+  if (loading) return (
+    <div className="min-h-screen bg-[var(--bg-purple)] flex items-center justify-center">
+      <div className="text-white text-2xl animate-pulse">Loading dashboard...</div>
+    </div>
+  );
+
+  if (authError) return (
+    <div className="min-h-screen bg-[var(--bg-purple)] flex items-center justify-center">
+      <div className="text-red-300 text-xl text-center p-8 bg-white/10 rounded-xl">
+        {authError}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-[var(--bg-purple)] font-sans">
       <Navbar navItems={[
-        { text: 'Home', href: '/', className: "underline-effect" },
-        { text: "Favorite", href: "/favorite-events", className: "underline-effect" },
-        { text: "My tickets", href: "/my-tickets", className: "underline-effect" },
-        { text: "Username", href: "#", className: "underline-effect" },
+        { text: "My Tickets", href: "/my-tickets", icon: <FaTicketAlt /> },
       ]} />
-      
-      <div className="flex">
-        <div className="w-60">
-          <Sidebar sidebarItems={{
-            'Dashboard': [
-              { text: 'Overview', link: '/dashboard', className: "" },
-              { text: 'Event Analytics', link: '/analytics', className: "" },
-              { text: 'Revenue Reports', link: '/revenue', className: "" }
-            ],
-            'Events': [
-              { text: 'Create Event', link: '/create-event', className: "" },
-              { text: 'Upcoming Events', link: '/upcoming', className: "" },
-              { text: 'Past Events', link: '/past-events', className: "" }
-            ],
-            'Settings': [
-              { text: 'Profile Settings', link: '/settings', className: "" },
-              { text: 'Notifications', link: '/notifications', className: "" }
-            ]
-          }} />
+
+      <div className="p-8 pt-20">
+        {/* Header Section */}
+        <div className="flex justify-between items-center mb-12">
+          <h1 className="text-3xl font-bold text-white">Tableau de bord</h1>
+          <div className="flex gap-4">
+            <NavLink 
+              to="/create-event"
+              className="bg-white text-[#4a2c8a] px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-[#d6b9f0] transition-colors"
+            >
+              <FaPlus /> Create Event
+            </NavLink>
+            <button className="bg-white text-[#4a2c8a] px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-[#d6b9f0] transition-colors">
+              <FaHistory /> Past Events
+            </button>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="w-[calc(100%-240px)] p-8 pt-20 bg-[var(--bg-purple)]">
-          {/* Header Section */}
-          <div className="flex justify-between items-center mb-12 mt-6">
-            <h1 className="text-3xl font-bold text-white">Tableau de bord</h1>
-            <div className="flex gap-4">
-              <button className="bg-white text-[#4a2c8a] px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-[#d6b9f0] transition-colors">
-                <FaPlus /> Create Event
-              </button>
-              <button className="bg-white text-[#4a2c8a] px-6 py-3 rounded-lg flex items-center gap-2 hover:bg-[#d6b9f0] transition-colors">
-                <FaHistory /> Past Events
-              </button>
+        {/* Stats Cards */}
+        <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+          <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
+            <div>
+              <p className="text-gray-500 text-sm">Total d'événements</p>
+              <p className="text-3xl font-bold text-[#4a2c8a]">{dashboardData?.summary.total_events || 0}</p>
+            </div>
+            <FaCalendar className="text-[#4a2c8a] text-3xl" />
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
+            <div>
+              <p className="text-gray-500 text-sm">Inscriptions totales</p>
+              <p className="text-3xl font-bold text-[#4a2c8a]">{dashboardData?.summary.total_registrations || 0}</p>
+            </div>
+            <FaUser className="text-[#4a2c8a] text-3xl" />
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
+            <div>
+              <p className="text-gray-500 text-sm">Taux de participation</p>
+              <div className="w-20 h-20">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={participationData}
+                      dataKey="value"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={20}
+                      outerRadius={40}
+                    >
+                      {participationData.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={index === 0 ? '#4a2c8a' : '#e0e0e0'}
+                        />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
-          {/* Stats Cards */}
-          <div ref={statsRef} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-              <div>
-                <p className="text-gray-500">Total d'événements</p>
-                <p className="text-3xl font-bold text-[#4a2c8a]">7</p>
-              </div>
-              <FaCalendar className="text-[#4a2c8a] text-3xl" />
+          <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
+            <div>
+              <p className="text-gray-500 text-sm">Prochain événement</p>
+              <p className="text-3xl font-bold text-[#4a2c8a]">
+                {dashboardData?.summary.next_event 
+                  ? new Date(dashboardData.summary.next_event.date).toLocaleDateString()
+                  : 'Aucun'}
+              </p>
             </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-              <div>
-                <p className="text-gray-500">Inscriptions totales</p>
-                <p className="text-3xl font-bold text-[#4a2c8a]">6</p>
-              </div>
-              <FaUser className="text-[#4a2c8a] text-3xl" />
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-              <div>
-                <p className="text-gray-500">Taux moyen de participation</p>
-                <p className="text-3xl font-bold text-[#4a2c8a]">3%</p>
-              </div>
-              <FaChartLine className="text-[#4a2c8a] text-3xl" />
-            </div>
-            <div className="bg-white p-6 rounded-xl shadow-lg flex items-center justify-between hover:shadow-xl transition-shadow">
-              <div>
-                <p className="text-gray-500">Prochain événement à venir</p>
-                <p className="text-lg font-bold text-[#4a2c8a]">01/04/2025</p>
-              </div>
-              <FaClock className="text-[#4a2c8a] text-3xl" />
-            </div>
+            <FaClock className="text-[#4a2c8a] text-3xl" />
           </div>
+        </div>
 
-          {/* Events Table */}
-          <div ref={tableRef} className="bg-white p-6 rounded-xl shadow-lg border border-[#2c2c3e]/10">
-            <h2 className="text-xl font-semibold text-[#4a2c8a] mb-4">Événements</h2>
-            <table className="w-full text-left text-[#2c2c3e]">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="p-4">Titre</th>
-                  <th className="p-4">Date</th>
-                  <th className="p-4">Lieu</th>
-                  <th className="p-4">Limite de tickets</th>
-                  <th className="p-4">Inscriptions</th>
-                  <th className="p-4">Taux de participation</th>
+        {/* Events Table */}
+        <div ref={tableRef} className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-100">
+              <tr>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Titre</th>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Date</th>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Lieu</th>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Limite</th>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Inscriptions</th>
+                <th className="p-4 text-left text-[#4a2c8a] font-semibold">Taux</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dashboardData?.events_stats.map((event, index) => (
+                <tr key={index} className="hover:bg-gray-50 transition-colors">
+                  <td className="p-4 border-t border-gray-100">{event.title}</td>
+                  <td className="p-4 border-t border-gray-100">
+                    {new Date(event.date).toLocaleDateString('fr-FR')}
+                  </td>
+                  <td className="p-4 border-t border-gray-100">{event.location}</td>
+                  <td className="p-4 border-t border-gray-100">{event.ticket_limit}</td>
+                  <td className="p-4 border-t border-gray-100">{event.registrations}</td>
+                  <td className="p-4 border-t border-gray-100">
+                    {event.participation_rate.toFixed(1)}%
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {eventsData.map((event, index) => (
-                  <tr key={index} className="border-b hover:bg-gray-50 transition-colors">
-                    <td className="p-4">{event.title}</td>
-                    <td className="p-4">{event.date}</td>
-                    <td className="p-4">{event.location}</td>
-                    <td className="p-4">{event.ticketLimit}</td>
-                    <td className="p-4">{event.registrations}</td>
-                    <td className="p-4">{event.participationRate}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

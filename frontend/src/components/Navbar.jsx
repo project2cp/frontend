@@ -31,8 +31,8 @@ export const Navbar = ({ navItems = [] }) => {
   const defaultItems = [
     { text: "Home", href: "/", className: "underline-effect" },
     { text: "About", href: "#about", className: "underline-effect" },    
-    { text: "Gallery", href: "#gallery", className: "underline-effect" },
-    { text: "Host Event", href: "/signup", className: "underline-effect" },
+    { text: "Exlplor", href: "/explore", className: "underline-effect" },
+    { text: "Host Event", href: "/create-event", className: "underline-effect" },
   ];
 
   const authItems = isLoggedIn

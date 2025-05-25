@@ -14,6 +14,7 @@ export const Profile = () => {
     profile_photo: null,
     notificationEnabled: true,
     payementMethode: [],
+    is_organizer: false, // Organizer status
   });
   const [isEditingPersonalInfo, setIsEditingPersonalInfo] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
@@ -101,6 +102,7 @@ export const Profile = () => {
           profile_photo: profilePhotoPath ? `${API_BASE_URL}/${profilePhotoPath}` : null,
           notificationEnabled: data.notificationEnabled ?? true,
           payementMethode: data.payementMethode || [],
+          is_organizer: data.is_organizer || false, // Add organizer status from API
         });
 
         // Log the constructed image URL for debugging
@@ -617,11 +619,13 @@ export const Profile = () => {
                 </li>
               ))}
             </ul>
-            <a href="/organizer" className="block mt-[50px] w-full">
-              <button className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-full">
-                Be an organizer
-              </button>
-            </a>
+            {!userData.is_organizer && ( // Conditionally render the "Be an organizer" button
+              <a href="/organizer" className="block mt-[50px] w-full">
+                <button className="bg-blue-500 px-4 py-2 rounded hover:bg-blue-600 cursor-pointer w-full">
+                  Be an organizer
+                </button>
+              </a>
+            )}
           </div>
         </aside>
       </div>
