@@ -26,7 +26,7 @@ function App() {
         <Route path="/verify-email" element={<EmailVerificationPrompt />} /> 
         <Route path= "/email/verify" element={<EmailVerification/>}/>
         <Route path="/profile" element={<Profile/>}/>
-        <Route path="/eventinfo" element={<EventInfo/>}/>
+        <Route path="/events/:id" element={<EventInfo />} />          
         <Route path="/explore" element={<ExplorePage/>}/>
         <Route path="/Organizer" element={<OrganizerForm />} />
         <Route path="/create-event" element={<EventForm/>}/>

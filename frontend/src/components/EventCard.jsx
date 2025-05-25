@@ -1,11 +1,20 @@
 import React from 'react';
 import { FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
 
 export const EventCard = ({ event }) => {
-  const { title, date, location, category, organizer, image } = event;
+  const navigate = useNavigate();
+  const { id, title, date, location, category, organizer, image } = event;
+
+  const handleClick = () => {
+    navigate(`/events/${id}`);
+  };
 
   return (
-    <div className="rounded-lg shadow-md bg-[#251425] hover:shadow-xl hover:scale-102 transition p-3 flex flex-col cursor-pointer h-[400px]">
+    <div 
+      className="rounded-lg shadow-md bg-[#251425] hover:shadow-xl hover:scale-102 transition p-3 flex flex-col cursor-pointer h-[400px]"
+      onClick={handleClick}
+    >
       <img
         src={`/storage/${image}`}
         alt={title}
@@ -40,7 +49,13 @@ export const EventCard = ({ event }) => {
           <span className="text-white">{category}</span>
         </div>
         
-        <button className="mt-auto w-full bg-[#B39DDB] text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors">
+        <button 
+          className="mt-auto w-full bg-[#B39DDB] text-white py-2 px-4 rounded-md hover:bg-purple-700 transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            // Handle reservation logic here
+          }}
+        >
           Reserve Now
         </button>
       </div>
