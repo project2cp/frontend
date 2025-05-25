@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
 import logo from "../assets/logo.png";
 
@@ -7,7 +7,6 @@ export const Navbar = ({ navItems = [] }) => {
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState(null);
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -17,7 +16,11 @@ export const Navbar = ({ navItems = [] }) => {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.json())
-        .then(data => setUserData(data.user || data)) // Handle both nested and flat response
+        .then(data => {
+          const user = data.user || data;
+          setUserData(user);
+          setIsLoggedIn(true);
+        })
         .catch(console.error);
     }
   }, []);
@@ -25,14 +28,22 @@ export const Navbar = ({ navItems = [] }) => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     setIsLoggedIn(false);
+    setUserData(null);
     navigate("/login");
   };
 
   const defaultItems = [
     { text: "Home", href: "/", className: "underline-effect" },
-    { text: "About", href: "#about", className: "underline-effect" },    
-    { text: "Exlplor", href: "/explore", className: "underline-effect" },
+    { text: "Explore", href: "/explore", className: "underline-effect" }, // Fixed typo
     { text: "Host Event", href: "/create-event", className: "underline-effect" },
+    // Conditionally add Dashboard for organizers
+    ...(userData?.is_organizer ? [
+      { text: "Dashboard", href: "/dashboard", className: "underline-effect" }
+    ] : []),
+    // Conditionally add My Tickets for logged-in users
+    ...(isLoggedIn ? [
+      { text: "My Tickets", href: "/my-tickets", className: "underline-effect" }
+    ] : [])
   ];
 
   const authItems = isLoggedIn
@@ -40,7 +51,6 @@ export const Navbar = ({ navItems = [] }) => {
         {
           element: (
             <li className="flex items-center gap-4">
-              {/* Profile Photo */}
               <div 
                 className="w-9 h-9 rounded-full bg-purple-500 cursor-pointer 
                          flex items-center justify-center overflow-hidden border-1 border-white"
@@ -48,7 +58,7 @@ export const Navbar = ({ navItems = [] }) => {
               >
                 {userData?.profile_photo ? (
                   <img 
-                    src={`/storage/${userData.profile_photo}`}
+                    src={`${import.meta.env.VITE_API_BASE_URL || ''}/storage/${userData.profile_photo}`}
                     alt="Profile"
                     className="w-full h-full object-cover"
                   />
@@ -58,8 +68,6 @@ export const Navbar = ({ navItems = [] }) => {
                   </span>
                 )}
               </div>
-
-              {/* Logout Icon with btn-effect styling */}
               <button 
                 onClick={handleLogout}
                 className="btn-effect hover:text-[var(--primary-purple)]"
@@ -94,25 +102,40 @@ export const Navbar = ({ navItems = [] }) => {
         <ul className="flex items-center space-x-5 pr-4">
           {defaultItems.map((item, index) => (
             <li key={index}>
-              <a href={item.href} className={item.className}>
+              <NavLink
+                to={item.href}
+                className={({ isActive }) => 
+                  `${item.className} ${isActive ? "text-purple-300 font-medium" : ""}`
+                }
+              >
                 {item.text}
-              </a>
+              </NavLink>
             </li>
           ))}
           {navItems.map((item, index) => (
             <li key={`nav-${index}`}>
-              <a href={item.href} className={item.className}>
+              <NavLink
+                to={item.href}
+                className={({ isActive }) => 
+                  `${item.className} ${isActive ? "text-purple-300 font-medium" : ""}`
+                }
+              >
                 {item.text}
-              </a>
+              </NavLink>
             </li>
           ))}
           {authItems.map((item, index) => (
             <React.Fragment key={`auth-${index}`}>
               {item.element || (
                 <li>
-                  <a href={item.href} className={item.className}>
+                  <NavLink
+                    to={item.href}
+                    className={({ isActive }) => 
+                      `${item.className} ${isActive ? "text-purple-300 font-medium" : ""}`
+                    }
+                  >
                     {item.text}
-                  </a>
+                  </NavLink>
                 </li>
               )}
             </React.Fragment>
