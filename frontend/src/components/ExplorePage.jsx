@@ -26,7 +26,7 @@ export const ExplorePage = () => {
     total: 0
   });
   const [currentTitleIndex, setCurrentTitleIndex] = useState(0);
-  const [showLocationInput, setShowLocationInput] = useState(false); // Added missing state
+  const [showLocationInput, setShowLocationInput] = useState(false);
   const titleContainerRef = useRef(null);
   const dateRef = useRef(null);
   const locationRef = useRef(null);
@@ -91,7 +91,9 @@ export const ExplorePage = () => {
 
   // Title animation effect
   useEffect(() => {
-    const titleElements = titleContainerRef.current.children;
+    const titleElements = titleContainerRef.current?.children;
+    if (!titleElements) return;
+
     const tl = gsap.timeline({ repeat: -1 });
     
     Array.from(titleElements).forEach((title, index) => {
@@ -171,14 +173,14 @@ export const ExplorePage = () => {
 
       {/* Animated Header Section */}
       <div className='pt-16'>
-        <div className="w-4/5 mx-auto mt-8 p-6 bg-[#dbcef5] rounded-lg shadow-lg min-h-[140px] relative overflow-hidden">
-          <div ref={titleContainerRef} className="relative h-full">
-            {titles.map((title) => (
-              <h2 
+        <div className="w-4/5 mx-auto mt-8 p-12 bg-[#dbcef5] rounded-lg shadow-lg relative min-h-[140px] flex items-center justify-center">
+          <div ref={titleContainerRef} className="relative w-full h-full">
+            {titles.map((title, index) => (
+              <h2
                 key={title}
-                className="absolute w-full text-3xl font-bold text-[var(--bg-purple)] text-center opacity-0"
-                style={{ 
-                  top: "50%", 
+                className={`absolute w-full text-3xl font-bold text-[var(--bg-purple)] text-center opacity-0 ${index === currentTitleIndex ? 'opacity-100' : ''}`}
+                style={{
+                  top: "50%",
                   transform: "translateY(-50%)",
                   textShadow: "1px 1px 2px rgba(0,0,0,0.1)"
                 }}

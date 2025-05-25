@@ -182,7 +182,7 @@ export const Login = () => {
 
                     <p className="text-center text-gray-400 text-sm">
                         Don't have an account?{" "}
-                        <a href="/register" className="text-purple-300 hover:text-purple-200">
+                        <a href="/signup" className="text-purple-300 hover:text-purple-200">
                             Sign up
                         </a>
                     </p>
