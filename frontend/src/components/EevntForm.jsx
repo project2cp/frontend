@@ -165,12 +165,6 @@ export const EventForm = () => {
     }
   };
 
-  const handleReset = () => {
-    setIsSubmitted(false);
-    setCurrentStep(1);
-    setFormData(initialEventData);
-    setErrors({});
-  };
 
   if (authError) {
     return null;
@@ -432,12 +426,12 @@ export const EventForm = () => {
                 <p className="text-gray-600 px-6">
                   Your event has been successfully published and is now visible to the community!
                 </p>
-                <button
-                  className="bg-[#4a2c8a] text-white px-8 py-3 rounded-lg hover:bg-[#6b4ba5] transition-colors w-full"
-                  onClick={handleReset}
+                <NavLink
+                  to="/dashboard"
+                  className="bg-purple-800 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
                 >
-                  View Event Dashboard
-                </button>
+                  Return to Dashboard
+                </NavLink>
               </div>
             </div>
           )}

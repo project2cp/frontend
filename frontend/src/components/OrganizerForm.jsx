@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FaCheck, FaEnvelope, FaInfoCircle, FaPhone, FaMapMarker, FaGlobe, FaBuilding, FaImage, FaUserPlus, FaCog } from 'react-icons/fa';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
 import { Navbar } from './Navbar';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 
 const initialFormData = {
   email: '',
@@ -143,13 +143,7 @@ export const OrganizerForm = () => {
     }
   };
 
-  const handleReset = () => {
-    setIsSubmitted(false);
-    setCurrentStep(1);
-    setFormData(initialFormData);
-    setErrors({});
-    setAuthError(null);
-  };
+
 
   if (authError) {
     return null;
@@ -402,12 +396,12 @@ export const OrganizerForm = () => {
                 <p className="text-gray-600 px-4">
                   Your organization has been successfully accepted to EventSphere!
                 </p>
-                <button
+                <NavLink
+                  to="/dashboard"
                   className="bg-purple-800 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors"
-                  onClick={handleReset}
                 >
                   Return to Dashboard
-                </button>
+                </NavLink>
               </div>
             </div>
           )}
