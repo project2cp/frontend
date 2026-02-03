@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaCheck, FaEnvelope, FaInfoCircle, FaPhone, FaMapMarker, FaGlobe, FaBuilding, FaImage, FaUserPlus, FaCog } from 'react-icons/fa';
 import { MdNavigateNext, MdNavigateBefore } from 'react-icons/md';
-import { Navbar } from './Navbar';
+import { Navbar } from '../layout/Navbar';
 import { useNavigate, useLocation, NavLink } from 'react-router-dom';
 
 const initialFormData = {

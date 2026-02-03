@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Navbar } from './Navbar';
-import { EventCard } from './EventCard';
-import { Footer } from './Home_section/Footer';
+import { Navbar } from '../layout/Navbar';
+import { EventCard } from '../ui/EventCard';
+import { Footer } from '../Home_section/Footer';
 import { FaSearch, FaArrowLeft, FaArrowRight, FaSortAmountDown, FaCalendarAlt, FaMapMarkerAlt } from 'react-icons/fa';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';

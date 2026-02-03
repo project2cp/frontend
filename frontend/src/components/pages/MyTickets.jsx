@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FaMapMarkerAlt, FaCheckCircle, FaTimesCircle, FaCalendarAlt } from 'react-icons/fa';
-import { Navbar } from "./Navbar";
+import { Navbar } from "../layout/Navbar";
 import { useNavigate } from 'react-router-dom';
 
 export const MyTickets = () => {

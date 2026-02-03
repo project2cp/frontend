@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Navbar } from './Navbar';
+import { Navbar } from '../layout/Navbar';
 import { gsap } from 'gsap';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'; // Added useNavigate and useLocation
 import { 

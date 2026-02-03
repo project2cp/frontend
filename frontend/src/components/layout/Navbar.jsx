@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, NavLink } from "react-router-dom";
 import { FiLogOut } from "react-icons/fi";
-import logo from "../assets/logo.png";
+import logo from "../../assets/logo.png";
 
 export const Navbar = ({ navItems = [] }) => {
   const navigate = useNavigate();

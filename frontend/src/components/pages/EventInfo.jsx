@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { EventCard } from "./EventCard";
-import { Navbar } from "./Navbar";
+import { EventCard } from "../ui/EventCard";
+import { Navbar } from "../layout/Navbar";
 import { FaCalendarAlt, FaMapMarkerAlt, FaUsers, FaTicketAlt, FaCheckCircle } from 'react-icons/fa';
 
 export const EventInfo = () => {

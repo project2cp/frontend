@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Navigate, useNavigate, useLocation } from "react-router-dom";
-import { Navbar } from "./Navbar";
-import { Sidebar } from "./Sidebar";
+import { Navbar } from "../layout/Navbar";
+import { Sidebar } from "../layout/Sidebar";
 import { FaCheck, FaTimes, FaEdit } from "react-icons/fa";
 
 export const Profile = () => {

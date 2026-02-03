@@ -1,19 +1,19 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { Home } from "./components/Home";
-import { Login } from "./components/Login";
-import { Signup } from "./components/Signup";
-import { Logout } from "./components/Logout";
+import { Home } from "./components/pages/Home";
+import { Login } from "./components/auth/Login";
+import { Signup } from "./components/auth/Signup";
+import { Logout } from "./components/auth/Logout";
 import { Test } from "./components/Test";
-import { EmailVerification } from "./components/EmailVerification ";
-import { EmailVerificationPrompt } from "./components/EmailVerificationPrompt";
-import { Profile } from "./components/Profile";
-import { EventInfo } from "./components/EventInfo";
-import { ExplorePage } from "./components/ExplorePage";
-import { OrganizerForm  } from "./components/OrganizerForm";
-import { EventForm } from "./components/EevntForm";
-import { Dashboard } from "./components/Dashboard";
-import { MyTickets } from "./components/MyTickets";
+import { EmailVerification } from "./components/auth/EmailVerification ";
+import { EmailVerificationPrompt } from "./components/auth/EmailVerificationPrompt";
+import { Profile } from "./components/pages/Profile";
+import { EventInfo } from "./components/pages/EventInfo";
+import { ExplorePage } from "./components/pages/ExplorePage";
+import { OrganizerForm  } from "./components/pages/OrganizerForm";
+import { EventForm } from "./components/pages/EevntForm";
+import { Dashboard } from "./components/pages/Dashboard";
+import { MyTickets } from "./components/pages/MyTickets";
 
 function App() {
   return (
